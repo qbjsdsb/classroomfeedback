@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import { Student } from "../types";
 import { listStudents, createStudent, updateStudent, deleteStudent } from "../hooks/useStudents";
 
@@ -29,7 +30,7 @@ export default function StudentsPage() {
       <ul className="divide-y">
         {list.map(s => (
           <li key={s.id} className="py-2 flex justify-between">
-            <span>{s.name}（{s.grade}）</span>
+            <span><NavLink to={`/students/${s.id}`} className="text-blue-600">{s.name}</NavLink>（{s.grade}）</span>
             <span className="space-x-2 text-sm">
               <button onClick={() => startEdit(s)} className="text-blue-600">编辑</button>
               <button onClick={() => remove(s.id!)} className="text-red-600">删除</button>
