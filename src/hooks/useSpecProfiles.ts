@@ -1,0 +1,54 @@
+import { db } from "../db/schema";
+import { SpecProfile, SpecSegment } from "../types";
+import { learnSpec } from "../ai/learn";
+import { getApiKey } from "./useSettings";
+
+export async function listProfiles(): Promise<SpecProfile[]> {
+  return db.specProfiles.toArray();
+}
+export async function getProfile(id: number): Promise<SpecProfile | undefined> {
+  return db.specProfiles.get(id);
+}
+export async function updateProfile(id: number, patch: Partial<SpecProfile>): Promise<void> {
+  await db.specProfiles.update(id, patch);
+}
+export async function createProfile(subject: string, name: string): Promise<number> {
+  return db.specProfiles.add({
+    subject, name, tone: "半书面", styleNote: "",
+    segments: [{ title: "课堂内容", targetWords: 80, contentPoints: "", freeNote: "" }],
+    opening: "", ending: "", lockedFields: [], isBuiltin: false, createdAt: Date.now(),
+  });
+}
+export async function toggleLock(id: number, fieldPath: string): Promise<void> {
+  const p = await db.specProfiles.get(id); if (!p) return;
+  const locked = new Set(p.lockedFields);
+  if (locked.has(fieldPath)) locked.delete(fieldPath); else locked.add(fieldPath);
+  await db.specProfiles.update(id, { lockedFields: [...locked] });
+}
+export async function relearn(id: number): Promise<void> {
+  const apiKey = await getApiKey();
+  if (!apiKey) throw new Error("请先在设置中填入 API Key");
+  const samples = await db.historySamples.where("specProfileId").equals(id).toArray();
+  const recent = samples.slice(-50).map(s => s.rawText);
+  if (recent.length === 0) throw new Error("请先上传历史反馈");
+  const learned = await learnSpec({ apiKey, samples: recent });
+  const p = await db.specProfiles.get(id); if (!p) return;
+  const locked = new Set(p.lockedFields);
+  const mergeSeg = (idx: number, src: SpecSegment): SpecSegment => {
+    const existing = p.segments[idx] ?? { title: "", targetWords: 0, contentPoints: "", freeNote: "" };
+    return {
+      title: locked.has(`segments[${idx}].title`) ? existing.title : src.title,
+      targetWords: locked.has(`segments[${idx}].targetWords`) ? existing.targetWords : src.targetWords,
+      contentPoints: locked.has(`segments[${idx}].contentPoints`) ? existing.contentPoints : src.contentPoints,
+      freeNote: locked.has(`segments[${idx}].freeNote`) ? existing.freeNote : src.freeNote,
+    };
+  };
+  const segments = learned.segments.map((s, i) => mergeSeg(i, s));
+  await db.specProfiles.update(id, {
+    tone: locked.has("tone") ? p.tone : learned.tone,
+    styleNote: locked.has("styleNote") ? p.styleNote : learned.styleNote,
+    opening: locked.has("opening") ? p.opening : learned.opening,
+    ending: locked.has("ending") ? p.ending : learned.ending,
+    segments,
+  });
+}
