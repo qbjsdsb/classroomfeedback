@@ -8,7 +8,10 @@ export async function listProfiles(): Promise<SpecProfile[]> {
 }
 export async function listProfilesBySubject(subject: string): Promise<SpecProfile[]> {
   if (!subject) return listProfiles();
-  return db.specProfiles.where("subject").equals(subject).toArray();
+  const matched = await db.specProfiles.where("subject").equals(subject).toArray();
+  // 过滤结果为空时回退到全部规范档，避免学生填了 defaultSubject 但无匹配规范档
+  // 导致下拉框为空、用户无法生成反馈的死锁场景
+  return matched.length > 0 ? matched : listProfiles();
 }
 export async function getProfile(id: number): Promise<SpecProfile | undefined> {
   return db.specProfiles.get(id);
