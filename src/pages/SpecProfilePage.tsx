@@ -112,7 +112,12 @@ export default function SpecProfilePage() {
           <div>
             <span className="text-sm">段落（可编辑）</span>
             {cur.segments.map((s, i) => (
-              <div key={i} className="card p-2 mt-1 space-y-1">
+              <div key={i} className="card p-2 mt-1 space-y-1 relative">
+                <button
+                  onClick={() => { const segs = cur.segments.filter((_, j) => j !== i); patch(cur.id!, { segments: segs }); }}
+                  className="absolute top-1 right-1 text-xs text-red-500 hover:bg-red-50 rounded px-1.5 py-0.5"
+                  title="删除该段落"
+                >✕</button>
                 <input className="input py-1" placeholder="标题" value={s.title}
                   onChange={e => { const segs = [...cur.segments]; segs[i] = { ...s, title: e.target.value }; patch(cur.id!, { segments: segs }); }} />
                 <input type="number" className="input py-1" placeholder="目标字数" value={s.targetWords}
@@ -123,6 +128,10 @@ export default function SpecProfilePage() {
                   onChange={e => { const segs = [...cur.segments]; segs[i] = { ...s, freeNote: e.target.value }; patch(cur.id!, { segments: segs }); }} />
               </div>
             ))}
+            <button
+              onClick={() => { const segs = [...cur.segments, { title: "", targetWords: 0, contentPoints: "", freeNote: "" }]; patch(cur.id!, { segments: segs }); }}
+              className="btn-soft mt-1 w-full"
+            >+ 添加段落</button>
           </div>
           <label className="block"><span className="label">开头</span>
             <input className="input" value={cur.opening}

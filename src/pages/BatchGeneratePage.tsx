@@ -26,7 +26,6 @@ export default function BatchGeneratePage() {
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [profileId, setProfileId] = useState<number | null>(null);
-  const [subject, setSubject] = useState("");
   const [text, setText] = useState("");
   const [step, setStep] = useState<Step>("input");
   const [perStudent, setPerStudent] = useState<PerStudent[]>([]);
@@ -155,12 +154,12 @@ export default function BatchGeneratePage() {
               {students.length > 5 && <span className="text-xs text-gray-500 self-center">超过5个会较慢，建议分批</span>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="label">规范档</label>
             <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="input">
               <option value="">选择规范档…</option>
-              {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {profiles.map(p => <option key={p.id} value={p.id}>{p.name}（{p.subject}）</option>)}
             </select>
-            <input className="input" placeholder="科目（如数学）" value={subject} onChange={e => setSubject(e.target.value)} />
           </div>
           <div className="flex gap-2 flex-wrap">
             {isDesktop() && supported && (

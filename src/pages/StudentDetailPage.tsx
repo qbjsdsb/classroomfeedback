@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Feedback, Student } from "../types";
 import { listFeedbacksByStudent, updateFeedback, listLearningFeedbacksByStudent } from "../hooks/useFeedbacks";
 import { extractProfile, ProfileProposal } from "../ai/extractProfile";
@@ -51,6 +51,7 @@ export default function StudentDetailPage() {
   if (!student) return <div className="text-gray-500">未找到学生</div>;
   return (
     <div className="space-y-3">
+      <Link to="/students" className="inline-block text-sm text-blue-600 hover:underline mb-1">← 返回学生列表</Link>
       <h1 className="text-xl font-bold">{student.name} 的历史反馈</h1>
       {list.length === 0 && <p className="text-gray-500 text-sm">暂无历史反馈</p>}
       {list.map(f => (
