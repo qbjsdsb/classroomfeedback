@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { SpecProfile } from "../types";
 import { listProfiles, updateProfile, toggleLock, relearn, createProfile } from "../hooks/useSpecProfiles";
 import { listSamples, addSample } from "../hooks/useHistorySamples";
+import { countDiffs, runAnalyze, applySuggestion, rejectSuggestion, applyAndLock } from "../hooks/useSuggestions";
+import { EditSuggestion } from "../ai/analyzeEdits";
+import { db } from "../db/schema";
 
 export default function SpecProfilePage() {
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
@@ -9,11 +12,22 @@ export default function SpecProfilePage() {
   const [samples, setSamples] = useState<{ rawText: string }[]>([]);
   const [newSample, setNewSample] = useState("");
   const [status, setStatus] = useState("");
+  const [diffCount, setDiffCount] = useState(0);
+  const [suggestions, setSuggestions] = useState<(EditSuggestion & { id?: number })[]>([]);
+  const [analyzeStatus, setAnalyzeStatus] = useState("");
   const cur = profiles.find(p => p.id === curId) ?? null;
 
   const reload = async () => { setProfiles(await listProfiles()); };
   useEffect(() => { reload(); }, []);
   useEffect(() => { (async () => { if (curId) setSamples(await listSamples(curId)); })(); }, [curId]);
+  useEffect(() => {
+    (async () => {
+      if (cur?.id) {
+        setDiffCount(await countDiffs(cur.id));
+        setSuggestions([]);
+      }
+    })();
+  }, [curId, profiles]);
 
   // 乐观更新：先同步更新本地 profiles，再异步写库，避免每次按键刷新导致失焦
   const patchLocal = (id: number, patch: Partial<SpecProfile>) => {
@@ -29,6 +43,18 @@ export default function SpecProfilePage() {
     try { setStatus("分析中…"); await relearn(cur.id); await reload(); setStatus("已更新"); }
     catch (e: any) { setStatus("失败：" + e.message); }
     setTimeout(() => setStatus(""), 2500);
+  };
+  const doAnalyze = async () => {
+    if (!cur) return;
+    try {
+      setAnalyzeStatus("分析中…"); setSuggestions([]);
+      const list = await runAnalyze(cur);
+      const pending = await db.suggestions.where("specProfileId").equals(cur.id!).toArray();
+      const map = new Map(pending.map(p => [p.field + "|" + p.proposal, p.id]));
+      setSuggestions(list.map(s => ({ ...s, id: map.get(s.field + "|" + s.proposal) })));
+      setAnalyzeStatus(list.length === 0 ? "未发现明显修改模式" : "");
+    } catch (e: any) { setAnalyzeStatus("失败：" + e.message); }
+    setTimeout(() => setAnalyzeStatus(""), 3000);
   };
   const upload = async () => {
     if (!cur?.id || !newSample.trim()) return;
@@ -116,6 +142,30 @@ export default function SpecProfilePage() {
           <button onClick={upload} className="bg-gray-200 px-3 py-1 rounded">添加样本</button>
           <button onClick={reanalyze} className="bg-blue-600 text-white px-3 py-1 rounded ml-2">重新分析（限最近50条）</button>
           {status && <p className="text-sm text-blue-600">{status}</p>}
+        </div>
+      )}
+
+      {cur && !cur.isBuiltin && (
+        <div className="space-y-2 border rounded p-3">
+          <h2 className="font-semibold">修改差异学习</h2>
+          <p className="text-sm text-gray-600">已积累 {diffCount} 条修改记录{diffCount < 20 ? "（至少需 20 条）" : ""}</p>
+          <button onClick={doAnalyze} disabled={diffCount < 20} className="bg-purple-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50">
+            分析我的修改习惯
+          </button>
+          {analyzeStatus && <p className="text-sm text-purple-600">{analyzeStatus}</p>}
+          {suggestions.map((s, i) => (
+            <div key={i} className="border rounded p-2 space-y-1 bg-purple-50">
+              <p className="text-xs text-gray-500">字段：{s.field}（证据 {s.evidenceCount} 条）</p>
+              <p className="text-xs">当前：{s.current || "（空）"}</p>
+              <p className="text-xs">建议：{s.proposal}</p>
+              <p className="text-xs text-gray-600">观察：{s.observed}</p>
+              <div className="flex gap-2 text-xs">
+                {s.id && <button onClick={async () => { await applySuggestion(s.id!); await reload(); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-green-600">采纳</button>}
+                {s.id && <button onClick={async () => { await applyAndLock(s.id!); await reload(); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-blue-600">采纳并锁定</button>}
+                {s.id && <button onClick={async () => { await rejectSuggestion(s.id!); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-gray-600">拒绝</button>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

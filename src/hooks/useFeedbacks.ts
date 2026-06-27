@@ -13,6 +13,13 @@ export async function updateFeedback(id: number, patch: Partial<Feedback>): Prom
 export async function listAllFeedbacks(): Promise<Feedback[]> {
   return db.feedbacks.orderBy("createdAt").toArray();
 }
+export async function listDiffsByProfile(specProfileId: number): Promise<{ aiOriginal: string; finalText: string }[]> {
+  const all = await db.feedbacks.where("specProfileId").equals(specProfileId).toArray();
+  return all
+    .filter(f => f.includeInLearning && f.aiOriginal !== f.finalText && f.aiOriginal && f.finalText)
+    .slice(-50)
+    .map(f => ({ aiOriginal: f.aiOriginal, finalText: f.finalText }));
+}
 
 export async function exportAsTxt(feedbacks: Feedback[], students: Student[]): Promise<string> {
   const nameOf = (id: number) => students.find(s => s.id === id)?.name ?? "未知";
