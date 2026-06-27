@@ -72,10 +72,27 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return id;
   }, [dismiss]);
 
-  const confirm = useCallback((_title: string, _message?: string): Promise<boolean> => {
-    // Task 2 实现
-    return Promise.resolve(false);
+  const [modal, setModal] = useState<{ title: string; message?: string; resolve: (ok: boolean) => void } | null>(null);
+
+  const confirm = useCallback((title: string, message?: string): Promise<boolean> => {
+    return new Promise<boolean>(resolve => {
+      setModal({ title, message, resolve });
+    });
   }, []);
+
+  const closeModal = useCallback((ok: boolean) => {
+    setModal(prev => {
+      prev?.resolve(ok);
+      return null;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!modal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeModal(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modal, closeModal]);
 
   const api: NotifyApi = {
     success: (m) => push("success", m, DURATION.success),
@@ -88,6 +105,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationContext.Provider value={api}>
       {children}
+      {modal && createPortal(
+        <div className="notify-overlay fixed inset-0 z-40 bg-black/40 flex items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) closeModal(false); }}>
+          <div className="card max-w-sm w-full mx-4 space-y-3">
+            <h3 className="font-bold text-gray-800">{modal.title}</h3>
+            {modal.message && <p className="text-sm text-gray-600">{modal.message}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => closeModal(false)} className="btn-soft">取消</button>
+              <button onClick={() => closeModal(true)} className="btn-danger">确认</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       {createPortal(
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {toasts.map(t => (

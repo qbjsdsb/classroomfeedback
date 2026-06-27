@@ -106,4 +106,57 @@ describe("NotificationProvider Toast", () => {
     function Bad() { useNotify(); return null; }
     expect(() => render(<Bad />)).toThrow(/NotificationProvider/);
   });
+
+  it("confirm 点确认 resolve(true)", async () => {
+    let result: boolean | null = null;
+    function H4() {
+      const n = useNotify();
+      return (
+        <div>
+          <button onClick={async () => { result = await n.confirm("删除", "确认？"); }}>ask</button>
+        </div>
+      );
+    }
+    render(<NotificationProvider><H4 /></NotificationProvider>);
+    fireEvent.click(screen.getByText("ask"));
+    expect(screen.getByText("确认？")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("确认"));
+    await act(async () => { await Promise.resolve(); });
+    expect(result).toBe(true);
+  });
+
+  it("confirm 点取消 resolve(false)", async () => {
+    let result: boolean | null = null;
+    function H5() {
+      const n = useNotify();
+      return (
+        <div>
+          <button onClick={async () => { result = await n.confirm("删除", "确认？"); }}>ask</button>
+        </div>
+      );
+    }
+    render(<NotificationProvider><H5 /></NotificationProvider>);
+    fireEvent.click(screen.getByText("ask"));
+    fireEvent.click(screen.getByText("取消"));
+    await act(async () => { await Promise.resolve(); });
+    expect(result).toBe(false);
+  });
+
+  it("confirm 点遮罩 resolve(false)", async () => {
+    let result: boolean | null = null;
+    function H6() {
+      const n = useNotify();
+      return (
+        <div>
+          <button onClick={async () => { result = await n.confirm("删除", "确认？"); }}>ask</button>
+        </div>
+      );
+    }
+    const { container } = render(<NotificationProvider><H6 /></NotificationProvider>);
+    fireEvent.click(screen.getByText("ask"));
+    const overlay = document.body.querySelector(".notify-overlay") as HTMLElement;
+    fireEvent.click(overlay);
+    await act(async () => { await Promise.resolve(); });
+    expect(result).toBe(false);
+  });
 });
