@@ -35,3 +35,12 @@ ${JSON_INSTRUCTION}
 {"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充"}],"opening":"常用开头","ending":"常用结尾"}`;
   return [{ role: "system", content: system }, { role: "user", content: txt }];
 }
+
+export function splitPrompt(studentNames: string[], rawText: string) {
+  const names = studentNames.join("、");
+  const system = `你是课程内容拆分助手。老师会口述一整节课涉及多个学生的情况。请按学生姓名把内容拆分到对应学生。
+学生名单：${names}
+${JSON_INSTRUCTION}
+输出 JSON 格式：{"学生名1":"该学生相关内容","学生名2":"..."}。名单中未提及的学生对应空字符串。不要编造名单外的人名。`;
+  return [{ role: "system", content: system }, { role: "user", content: rawText }];
+}
