@@ -9,10 +9,12 @@ import { correctText } from "../ai/correct";
 import { generateFeedback } from "../ai/generate";
 import { getApiKey } from "../hooks/useSettings";
 import { loadDraft, saveDraft, clearDraft } from "../hooks/useDraft";
+import { useNotify } from "../hooks/useNotify";
 
 const TEMPLATES = ["【学生姓名】", "【今日知识点】", "【课堂表现】", "【家庭建议】"];
 
 export default function GeneratePage() {
+  const notify = useNotify();
   const [students, setStudents] = useState<Student[]>([]);
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
   const [availableProfiles, setAvailableProfiles] = useState<SpecProfile[]>([]);
@@ -23,8 +25,6 @@ export default function GeneratePage() {
   const [generating, setGenerating] = useState(false);
   const [preview, setPreview] = useState("");
   const [editing, setEditing] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -49,28 +49,34 @@ export default function GeneratePage() {
 
   const doCorrect = async () => {
     const apiKey = await getApiKey();
-    if (!apiKey) { setError("请先设置 API Key"); return; }
+    if (!apiKey) { notify.error("请先设置 API Key"); return; }
     const student = students.find(s => s.id === studentId);
-    setCorrecting(true); setError("");
+    setCorrecting(true);
+    const tid = notify.info("纠错中…", { duration: 0 });
     try {
       const out = await correctText({ apiKey, rawText: text, studentNames: student ? [student.name] : [], subjectTerms: [] });
       setText(out);
-    } catch (e: any) { setError("纠错失败：" + e.message); }
+      notify.dismiss(tid);
+      notify.success("纠错完成");
+    } catch (e: any) { notify.dismiss(tid); notify.error("纠错失败：" + e.message); }
     finally { setCorrecting(false); }
   };
 
   const doGenerate = async () => {
     const apiKey = await getApiKey();
-    if (!apiKey) { setError("请先设置 API Key"); return; }
+    if (!apiKey) { notify.error("请先设置 API Key"); return; }
     const student = students.find(s => s.id === studentId);
     const profile = profiles.find(p => p.id === profileId);
-    if (!student || !profile) { setError("请选择学生和规范档"); return; }
-    setGenerating(true); setError(""); setPreview("");
+    if (!student || !profile) { notify.error("请选择学生和规范档"); return; }
+    setGenerating(true); setPreview("");
+    const tid = notify.info("生成中…", { duration: 0 });
     try {
       const history = student.id ? await listFeedbacksByStudent(student.id) : [];
       const out = await generateFeedback({ apiKey, profile, student, courseContent: text, history });
       setPreview(out.feedback); setEditing(out.feedback);
-    } catch (e: any) { setError("生成失败：" + e.message + "（可重试或手动编写）"); }
+      notify.dismiss(tid);
+      notify.success("生成完成");
+    } catch (e: any) { notify.dismiss(tid); notify.error("生成失败：" + e.message + "（可重试或手动编写）"); }
     finally { setGenerating(false); }
   };
 
@@ -82,14 +88,13 @@ export default function GeneratePage() {
       studentId: student.id, subject: profile.subject, specProfileId: profile.id,
       courseContent: text, aiOriginal: preview, finalText: editing, includeInLearning: false,
     });
-    setSaved(true); clearDraft(); setText(""); setPreview(""); setEditing("");
-    setTimeout(() => setSaved(false), 1500);
+    notify.success("已保存（已记录 AI 原文与你的修改，供未来学习）");
+    clearDraft(); setText(""); setPreview(""); setEditing("");
   };
 
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">生成反馈</h1>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
       <div className="grid grid-cols-2 gap-2">
         <select value={studentId ?? ""} onChange={e => setStudentId(Number(e.target.value))} className="input">
           <option value="">选择学生…</option>
@@ -130,7 +135,6 @@ export default function GeneratePage() {
             <button onClick={doSave} className="btn-success">确认保存</button>
             <button onClick={() => navigator.clipboard.writeText(editing)} className="btn-soft">复制</button>
           </div>
-          {saved && <p className="text-green-600 text-sm">已保存（已记录 AI 原文与你的修改，供未来学习）</p>}
         </div>
       )}
     </div>

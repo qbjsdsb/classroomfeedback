@@ -10,6 +10,7 @@ import { correctText } from "../ai/correct";
 import { splitCourseContent } from "../ai/split";
 import { generateFeedback } from "../ai/generate";
 import { getApiKey } from "../hooks/useSettings";
+import { useNotify } from "../hooks/useNotify";
 
 type Step = "input" | "splitConfirm" | "result";
 interface PerStudent {
@@ -22,6 +23,7 @@ interface PerStudent {
 }
 
 export default function BatchGeneratePage() {
+  const notify = useNotify();
   const [students, setStudents] = useState<Student[]>([]);
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
@@ -30,7 +32,6 @@ export default function BatchGeneratePage() {
   const [step, setStep] = useState<Step>("input");
   const [perStudent, setPerStudent] = useState<PerStudent[]>([]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -48,31 +49,37 @@ export default function BatchGeneratePage() {
 
   const doCorrect = async () => {
     const apiKey = await getApiKey();
-    if (!apiKey) { setError("请先设置 API Key"); return; }
+    if (!apiKey) { notify.error("请先设置 API Key"); return; }
     const names = students.filter(s => selectedStudentIds.includes(s.id!)).map(s => s.name);
-    setBusy(true); setError("");
+    setBusy(true);
+    const tid = notify.info("纠错中…", { duration: 0 });
     try {
       const out = await correctText({ apiKey, rawText: text, studentNames: names, subjectTerms: [] });
       setText(out);
-    } catch (e: any) { setError("纠错失败：" + e.message); }
+      notify.dismiss(tid);
+      notify.success("纠错完成");
+    } catch (e: any) { notify.dismiss(tid); notify.error("纠错失败：" + e.message); }
     finally { setBusy(false); }
   };
 
   const doSplit = async () => {
     const apiKey = await getApiKey();
-    if (!apiKey) { setError("请先设置 API Key"); return; }
-    if (selectedStudentIds.length === 0) { setError("请至少选一个学生"); return; }
-    if (!profileId) { setError("请选规范档"); return; }
-    if (!text.trim()) { setError("请输入课程内容"); return; }
+    if (!apiKey) { notify.error("请先设置 API Key"); return; }
+    if (selectedStudentIds.length === 0) { notify.error("请至少选一个学生"); return; }
+    if (!profileId) { notify.error("请选规范档"); return; }
+    if (!text.trim()) { notify.error("请输入课程内容"); return; }
     const chosen = students.filter(s => selectedStudentIds.includes(s.id!));
-    setBusy(true); setError("");
+    setBusy(true);
+    const tid = notify.info("拆分中…", { duration: 0 });
     try {
       const split = await splitCourseContent({ apiKey, studentNames: chosen.map(s => s.name), rawText: text });
       setPerStudent(chosen.map(s => ({
         student: s, content: split[s.name] ?? "", status: "pending", feedback: "", aiOriginal: "", error: ""
       })));
       setStep("splitConfirm");
-    } catch (e: any) { setError("拆分失败：" + e.message); }
+      notify.dismiss(tid);
+      notify.success("拆分完成，请确认");
+    } catch (e: any) { notify.dismiss(tid); notify.error("拆分失败：" + e.message); }
     finally { setBusy(false); }
   };
 
@@ -93,7 +100,8 @@ export default function BatchGeneratePage() {
     const apiKey = await getApiKey();
     const profile = profiles.find(p => p.id === profileId);
     if (!apiKey || !profile) return;
-    setBusy(true); setError("");
+    setBusy(true);
+    const tid = notify.info("批量生成中…", { duration: 0 });
     const historyMap: Record<number, Feedback[]> = {};
     for (const ps of perStudent) {
       if (ps.student.id) historyMap[ps.student.id] = await listFeedbacksByStudent(ps.student.id);
@@ -101,6 +109,10 @@ export default function BatchGeneratePage() {
     for (let i = 0; i < perStudent.length; i++) {
       await generateOne(i, apiKey, profile, historyMap);
     }
+    notify.dismiss(tid);
+    const failed = perStudent.filter(p => p.status === "error").length;
+    if (failed > 0) notify.error(`${failed} 个生成失败，可重试`);
+    else notify.success("全部生成完成");
     setBusy(false);
     setStep("result");
   };
@@ -112,9 +124,11 @@ export default function BatchGeneratePage() {
     const sid = perStudent[idx].student.id;
     if (!sid) return;
     setBusy(true);
+    const tid = notify.info("重新生成中…", { duration: 0 });
     const history = await listFeedbacksByStudent(sid);
     const historyMap: Record<number, Feedback[]> = { [sid]: history };
     await generateOne(idx, apiKey, profile, historyMap);
+    notify.dismiss(tid);
     setBusy(false);
   };
 
@@ -131,14 +145,13 @@ export default function BatchGeneratePage() {
         count++;
       }
     }
-    alert("已保存 " + count + " 条反馈");
+    notify.success("已保存 " + count + " 条反馈");
     setStep("input"); setText(""); setPerStudent([]); setSelectedStudentIds([]);
   };
 
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">批量生成反馈</h1>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {step === "input" && (
         <div className="space-y-3">
