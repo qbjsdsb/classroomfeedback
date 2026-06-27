@@ -44,3 +44,16 @@ ${JSON_INSTRUCTION}
 输出 JSON 格式：{"学生名1":"该学生相关内容","学生名2":"..."}。名单中未提及的学生对应空字符串。不要编造名单外的人名。`;
   return [{ role: "system", content: system }, { role: "user", content: rawText }];
 }
+
+export function analyzeEditsPrompt(profile: SpecProfile, diffs: { aiOriginal: string; finalText: string }[]) {
+  const diffTxt = diffs.map((d, i) => `--- 修改记录${i + 1} ---
+AI原文：${d.aiOriginal}
+老师修改后：${d.finalText}`).join("\n\n");
+  const profileDesc = `当前规范档：语气=${profile.tone}；风格=${profile.styleNote}；开头=${profile.opening}；结尾=${profile.ending}；段落数=${profile.segments.length}`;
+  const system = `你是反馈修改习惯分析助手。分析老师对 AI 生成反馈的修改，找出老师的写作偏好，提出规范档优化建议。
+${profileDesc}
+只针对老师反复出现的修改模式提建议（evidenceCount>=3 才算反复）。
+${JSON_INSTRUCTION}
+输出 JSON：{"suggestions":[{"field":"字段路径如opening/styleNote/segments[0].contentPoints","current":"当前值","proposal":"建议值","observed":"观察到的修改模式","evidenceCount":数字}]}。无建议时返回 {"suggestions":[]}。`;
+  return [{ role: "system", content: system }, { role: "user", content: diffTxt }];
+}
