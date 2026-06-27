@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { getApiKey, saveApiKey, setLastBackupAt } from "../hooks/useSettings";
 import { exportAll, importAll } from "../backup/export";
+import { useNotify } from "../hooks/useNotify";
 
 export default function SettingsPage() {
+  const notify = useNotify();
   const [key, setKey] = useState("");
-  const [saved, setSaved] = useState(false);
   useEffect(() => { (async () => setKey(await getApiKey()))(); }, []);
-  const save = async () => { await saveApiKey(key); setSaved(true); setTimeout(() => setSaved(false), 1500); };
+  const save = async () => { await saveApiKey(key); notify.success("已保存"); };
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">设置</h1>
@@ -16,7 +17,6 @@ export default function SettingsPage() {
           className="input mt-1" placeholder="sk-..." />
       </label>
       <button onClick={save} className="btn-primary">保存</button>
-      {saved && <p className="text-green-600 text-sm">已保存</p>}
       <p className="hint">Key 仅存在本机浏览器，不会上传。</p>
       <div className="border-t pt-3 space-y-2">
         <h2 className="font-semibold">数据备份</h2>
@@ -27,12 +27,16 @@ export default function SettingsPage() {
             const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
             a.download = `kehoufankui-backup-${Date.now()}.json`; a.click();
             await setLastBackupAt(Date.now());
+            notify.success("已导出");
           }} className="btn-soft">导出全部数据</button>
           <label className="btn-soft cursor-pointer">
             导入数据
             <input type="file" accept="application/json" className="hidden" onChange={async e => {
               const f = e.target.files?.[0]; if (!f) return;
-              await importAll(await f.text()); alert("导入完成，请刷新页面");
+              try {
+                await importAll(await f.text());
+                notify.success("导入完成，请刷新页面");
+              } catch (err: any) { notify.error("导入失败：" + err.message); }
             }} />
           </label>
         </div>

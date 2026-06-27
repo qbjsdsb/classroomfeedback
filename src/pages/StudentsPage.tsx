@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Student } from "../types";
 import { listStudents, createStudent, updateStudent, deleteStudent } from "../hooks/useStudents";
+import { useNotify } from "../hooks/useNotify";
+import { EmptyState } from "../components/EmptyState";
 
 const EMPTY: Omit<Student, "id" | "createdAt"> = { name: "", grade: "", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "" };
 
 export default function StudentsPage() {
+  const notify = useNotify();
   const [list, setList] = useState<Student[]>([]);
   const [editing, setEditing] = useState<Student | null>(null);
   const [form, setForm] = useState<Omit<Student, "id" | "createdAt">>(EMPTY);
@@ -18,8 +21,12 @@ export default function StudentsPage() {
     if (editing?.id) await updateStudent(editing.id, form);
     else await createStudent(form);
     setForm(EMPTY); setEditing(null); await reload();
+    notify.success("已保存");
   };
-  const remove = async (id: number) => { if (confirm("确认删除该学生？")) { await deleteStudent(id); await reload(); } };
+  const remove = async (id: number) => {
+    const ok = await notify.confirm("删除学生", "确认删除该学生？此操作不可撤销。");
+    if (ok) { await deleteStudent(id); await reload(); notify.success("已删除"); }
+  };
 
   return (
     <div className="space-y-4">
@@ -27,17 +34,21 @@ export default function StudentsPage() {
         <h1 className="text-xl font-bold">学生管理</h1>
         <button onClick={startNew} className="btn-ghost">+ 新建</button>
       </div>
-      <ul className="divide-y">
-        {list.map(s => (
-          <li key={s.id} className="py-2 flex justify-between">
-            <span><NavLink to={`/students/${s.id}`} className="text-blue-600">{s.name}</NavLink>（{s.grade}）</span>
-            <span className="space-x-2 text-sm">
-              <button onClick={() => startEdit(s)} className="btn-ghost">编辑</button>
-              <button onClick={() => remove(s.id!)} className="btn-danger">删除</button>
-            </span>
-          </li>
-        ))}
-      </ul>
+      {list.length === 0 ? (
+        <EmptyState title="暂无学生" hint="添加你的第一个学生档案" action={<button className="btn-primary" onClick={startNew}>新建学生</button>} />
+      ) : (
+        <ul className="divide-y">
+          {list.map(s => (
+            <li key={s.id} className="py-2 flex justify-between">
+              <span><NavLink to={`/students/${s.id}`} className="text-blue-600">{s.name}</NavLink>（{s.grade}）</span>
+              <span className="space-x-2 text-sm">
+                <button onClick={() => startEdit(s)} className="btn-ghost">编辑</button>
+                <button onClick={() => remove(s.id!)} className="btn-danger">删除</button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="card space-y-2">
         <h2 className="font-semibold">{editing ? "编辑" : "新建"}学生</h2>
         <label className="label">姓名<input className="input" placeholder="姓名" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label>
