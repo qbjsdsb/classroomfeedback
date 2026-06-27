@@ -50,7 +50,15 @@ export default function SpecProfilePage() {
       </div>
       <select value={curId ?? ""} onChange={e => setCurId(Number(e.target.value))} className="border rounded p-2 w-full">
         <option value="">选择规范档…</option>
-        {profiles.map(p => <option key={p.id} value={p.id}>{p.name}{p.isBuiltin ? "（内置）" : ""}</option>)}
+        {Object.entries(
+          profiles.reduce((acc: Record<string, SpecProfile[]>, p) => {
+            (acc[p.subject] = acc[p.subject] || []).push(p); return acc;
+          }, {})
+        ).map(([subj, list]) => (
+          <optgroup key={subj} label={subj}>
+            {list.map(p => <option key={p.id} value={p.id}>{p.name}{p.isBuiltin ? "（内置）" : ""}</option>)}
+          </optgroup>
+        ))}
       </select>
 
       {cur && (

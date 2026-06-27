@@ -6,6 +6,10 @@ import { getApiKey } from "./useSettings";
 export async function listProfiles(): Promise<SpecProfile[]> {
   return db.specProfiles.toArray();
 }
+export async function listProfilesBySubject(subject: string): Promise<SpecProfile[]> {
+  if (!subject) return listProfiles();
+  return db.specProfiles.where("subject").equals(subject).toArray();
+}
 export async function getProfile(id: number): Promise<SpecProfile | undefined> {
   return db.specProfiles.get(id);
 }

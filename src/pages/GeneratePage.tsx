@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Student, SpecProfile } from "../types";
 import { listStudents } from "../hooks/useStudents";
-import { listProfiles } from "../hooks/useSpecProfiles";
+import { listProfiles, listProfilesBySubject } from "../hooks/useSpecProfiles";
 import { listFeedbacksByStudent, saveFeedback } from "../hooks/useFeedbacks";
 import { useRecording } from "../hooks/useRecording";
 import { isDesktop } from "../lib/device";
@@ -15,6 +15,7 @@ const TEMPLATES = ["【学生姓名】", "【今日知识点】", "【课堂表�
 export default function GeneratePage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
+  const [availableProfiles, setAvailableProfiles] = useState<SpecProfile[]>([]);
   const [studentId, setStudentId] = useState<number | null>(null);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [text, setText] = useState("");
@@ -33,6 +34,15 @@ export default function GeneratePage() {
     })();
   }, []);
   useEffect(() => { saveDraft(text); }, [text]);
+  useEffect(() => { setAvailableProfiles(profiles); }, [profiles]);
+  useEffect(() => {
+    (async () => {
+      const student = students.find(s => s.id === studentId);
+      if (student?.defaultSubject) setAvailableProfiles(await listProfilesBySubject(student.defaultSubject));
+      else setAvailableProfiles(profiles);
+      setProfileId(null);
+    })();
+  }, [studentId, students, profiles]);
 
   const onFinal = (chunk: string) => setText(t => t + chunk);
   const { supported, recording, interim, start, stop } = useRecording(onFinal);
@@ -87,7 +97,7 @@ export default function GeneratePage() {
         </select>
         <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="border rounded p-2">
           <option value="">选择规范档…</option>
-          {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {availableProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
 

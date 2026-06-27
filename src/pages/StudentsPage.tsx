@@ -45,6 +45,7 @@ export default function StudentsPage() {
         <textarea className="block w-full border rounded p-2" placeholder="性格特点" value={form.personality} onChange={e => setForm({ ...form, personality: e.target.value })} />
         <textarea className="block w-full border rounded p-2" placeholder="薄弱点" value={form.weaknesses} onChange={e => setForm({ ...form, weaknesses: e.target.value })} />
         <textarea className="block w-full border rounded p-2" placeholder="家长关注点" value={form.parentFocus} onChange={e => setForm({ ...form, parentFocus: e.target.value })} />
+        <input className="block w-full border rounded p-2" placeholder="常用科目（可选，如数学）" value={form.defaultSubject} onChange={e => setForm({ ...form, defaultSubject: e.target.value })} />
         <button onClick={submit} className="bg-blue-600 text-white px-4 py-2 rounded">保存</button>
       </div>
     </div>
