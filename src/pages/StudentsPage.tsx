@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Student } from "../types";
 import { listStudents, createStudent, updateStudent, deleteStudent } from "../hooks/useStudents";
 
-const EMPTY: Omit<Student, "id" | "createdAt"> = { name: "", grade: "", personality: "", weaknesses: "", parentFocus: "" };
+const EMPTY: Omit<Student, "id" | "createdAt"> = { name: "", grade: "", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "" };
 
 export default function StudentsPage() {
   const [list, setList] = useState<Student[]>([]);
@@ -13,7 +13,7 @@ export default function StudentsPage() {
   useEffect(() => { reload(); }, []);
 
   const startNew = () => { setEditing(null); setForm(EMPTY); };
-  const startEdit = (s: Student) => { setEditing(s); setForm({ name: s.name, grade: s.grade, personality: s.personality, weaknesses: s.weaknesses, parentFocus: s.parentFocus }); };
+  const startEdit = (s: Student) => { setEditing(s); setForm({ name: s.name, grade: s.grade, personality: s.personality, weaknesses: s.weaknesses, parentFocus: s.parentFocus, defaultSubject: s.defaultSubject }); };
   const submit = async () => {
     if (editing?.id) await updateStudent(editing.id, form);
     else await createStudent(form);

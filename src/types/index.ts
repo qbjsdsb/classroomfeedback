@@ -30,6 +30,7 @@ export interface Student {
   personality: string;
   weaknesses: string;
   parentFocus: string;
+  defaultSubject: string;
   createdAt: number;
 }
 
@@ -55,7 +56,7 @@ export interface Feedback {
   createdAt: number;
 }
 
-export type CallType = "correct" | "generate" | "learn";
+export type CallType = "correct" | "generate" | "learn" | "split" | "analyzeEdits" | "extractProfile";
 
 export interface TokenUsage {
   id?: number;
@@ -69,4 +70,17 @@ export interface Settings {
   id?: number;
   apiKey: string;
   lastBackupAt: number;
+}
+
+export interface Suggestion {
+  id?: number;
+  specProfileId: number;
+  type: "style";
+  field: string;
+  current: string;
+  proposal: string;
+  observed: string;
+  evidenceCount: number;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: number;
 }

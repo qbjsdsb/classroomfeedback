@@ -3,7 +3,7 @@ import { generateFeedback } from "../../src/ai/generate";
 import { SpecProfile, Student, Feedback } from "../../src/types";
 
 const profile: SpecProfile = { subject: "数学", name: "p", tone: "正式书面", styleNote: "", segments: [{ title: "课堂", targetWords: 80, contentPoints: "知识点", freeNote: "" }], opening: "该生今日", ending: "建议", lockedFields: [], isBuiltin: false, createdAt: 0 };
-const student: Student = { name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", createdAt: 0 };
+const student: Student = { name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: 0 };
 
 describe("generateFeedback", () => {
   it("parses JSON feedback (with code fence)", async () => {

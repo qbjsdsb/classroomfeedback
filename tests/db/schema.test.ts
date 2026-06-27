@@ -10,7 +10,7 @@ beforeEach(async () => {
 describe("db schema", () => {
   it("stores and reads a student", async () => {
     const id = await db.students.add({
-      name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", createdAt: Date.now()
+      name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: Date.now()
     });
     const got = await db.students.get(id);
     expect(got?.name).toBe("张三");
@@ -30,7 +30,7 @@ describe("db schema", () => {
       segments: [], opening: "", ending: "", lockedFields: [], isBuiltin: false, createdAt: Date.now()
     });
     const stid = await db.students.add({
-      name: "李四", grade: "高一", personality: "", weaknesses: "", parentFocus: "", createdAt: Date.now()
+      name: "李四", grade: "高一", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: Date.now()
     });
     const fid = await db.feedbacks.add({
       studentId: stid!, subject: "数学", specProfileId: sid!,

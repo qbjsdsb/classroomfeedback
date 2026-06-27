@@ -12,9 +12,7 @@ export default function StatsPage() {
       <div>
         <h2 className="font-semibold">按类型</h2>
         <ul className="text-sm">
-          <li>纠错：{s.byType.correct}</li>
-          <li>生成：{s.byType.generate}</li>
-          <li>学习：{s.byType.learn}</li>
+          {Object.entries(s.byType).map(([k, v]) => <li key={k}>{k}：{v}</li>)}
         </ul>
       </div>
       <div>

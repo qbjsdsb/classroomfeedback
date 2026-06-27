@@ -9,7 +9,10 @@ export interface Stats {
 
 export async function getStats(): Promise<Stats> {
   const all = await db.tokenUsage.toArray();
-  const byType: Record<CallType, number> = { correct: 0, generate: 0, learn: 0 };
+  const byType: Record<CallType, number> = {
+    correct: 0, generate: 0, learn: 0,
+    split: 0, analyzeEdits: 0, extractProfile: 0,
+  };
   const byDay: Record<string, number> = {};
   let total = 0;
   for (const u of all) {

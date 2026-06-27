@@ -6,7 +6,7 @@ beforeEach(async () => { await db.delete(); await db.open(); });
 
 describe("backup", () => {
   it("exports then imports round-trips students", async () => {
-    await db.students.add({ name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", createdAt: 1 });
+    await db.students.add({ name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: 1 });
     const json = await exportAll();
     await db.delete(); await db.open();
     await importAll(json);
