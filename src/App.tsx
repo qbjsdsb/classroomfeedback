@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import StudentsPage from "./pages/StudentsPage";
 import SpecProfilePage from "./pages/SpecProfilePage";
 import GeneratePage from "./pages/GeneratePage";
+import BatchGeneratePage from "./pages/BatchGeneratePage";
 import StatsPage from "./pages/StatsPage";
 import SettingsPage from "./pages/SettingsPage";
 import StudentDetailPage from "./pages/StudentDetailPage";
@@ -37,6 +38,7 @@ export default function App() {
         <NavLink to="/students" className={({ isActive }) => isActive ? "font-bold" : ""}>学生</NavLink>
         <NavLink to="/spec" className={({ isActive }) => isActive ? "font-bold" : ""}>规范档</NavLink>
         <NavLink to="/generate" className={({ isActive }) => isActive ? "font-bold" : ""}>生成反馈</NavLink>
+        <NavLink to="/batch" className={({ isActive }) => isActive ? "font-bold" : ""}>批量生成</NavLink>
         <NavLink to="/stats" className={({ isActive }) => isActive ? "font-bold" : ""}>统计</NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? "font-bold" : ""}>设置</NavLink>
       </nav>
@@ -47,6 +49,7 @@ export default function App() {
           <Route path="/students/:id" element={<StudentDetailPage />} />
           <Route path="/spec" element={<SpecProfilePage />} />
           <Route path="/generate" element={<GeneratePage />} />
+          <Route path="/batch" element={<BatchGeneratePage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
