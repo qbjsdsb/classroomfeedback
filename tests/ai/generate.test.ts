@@ -11,7 +11,7 @@ describe("generateFeedback", () => {
       ok: true,
       json: async () => ({ choices: [{ message: { content: '```json\n{"feedback":"该生今日表现良好。建议多练。"}\n```' } }], usage: { prompt_tokens: 10, completion_tokens: 20 } }),
     } as any));
-    const out = await generateFeedback({ apiKey: "k", profile, student, courseContent: "讲了幂函数", history: [] as Feedback[] });
+    const out = await generateFeedback({ apiKey: "k", profile, student, courseContent: "讲了幂函数", history: [] as Feedback[], includedSegments: profile.segments });
     expect(out.feedback).toBe("该生今日表现良好。建议多练。");
   });
 
@@ -20,7 +20,7 @@ describe("generateFeedback", () => {
       ok: true,
       json: async () => ({ choices: [{ message: { content: '{"feedback":"plain text"}' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }),
     } as any));
-    const out = await generateFeedback({ apiKey: "k", profile, student, courseContent: "x", history: [] });
+    const out = await generateFeedback({ apiKey: "k", profile, student, courseContent: "x", history: [], includedSegments: profile.segments });
     expect(out.feedback).toBe("plain text");
   });
 });

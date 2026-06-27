@@ -1,4 +1,4 @@
-import { SpecProfile, Student, Feedback } from "../types";
+import { SpecProfile, SpecSegment, Student, Feedback } from "../types";
 
 const JSON_INSTRUCTION = "请严格只输出 JSON，不要输出任何解释文字或 markdown 代码块。";
 
@@ -9,8 +9,16 @@ export function correctPrompt(rawText: string, studentNames: string[], subjectTe
   ];
 }
 
-export function generatePrompt(profile: SpecProfile, student: Student, courseContent: string, history: Feedback[]) {
-  const segDesc = profile.segments.map((s, i) => `第${i + 1}段「${s.title}」约${s.targetWords}字，要点：${s.contentPoints}${s.freeNote ? "；补充：" + s.freeNote : ""}`).join("\n");
+export function generatePrompt(
+  profile: SpecProfile,
+  student: Student,
+  courseContent: string,
+  history: Feedback[],
+  includedSegments: SpecSegment[],
+) {
+  const segDesc = includedSegments.map((s, i) =>
+    `第${i + 1}段「${s.title}」约${s.targetWords}字，要点：${s.contentPoints}${s.freeNote ? "；补充：" + s.freeNote : ""}`
+  ).join("\n");
   const histTxt = history.slice(-2).map((h, i) => `历史反馈${i + 1}：${h.finalText}`).join("\n\n") || "（无历史反馈）";
   const system = `你是教培课后反馈撰写助手。严格按以下规范档撰写反馈。
 语气：${profile.tone}；风格说明：${profile.styleNote}

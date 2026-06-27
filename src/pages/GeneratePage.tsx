@@ -72,7 +72,7 @@ export default function GeneratePage() {
     const tid = notify.info("生成中…", { duration: 0 });
     try {
       const history = student.id ? await listFeedbacksByStudent(student.id) : [];
-      const out = await generateFeedback({ apiKey, profile, student, courseContent: text, history });
+      const out = await generateFeedback({ apiKey, profile, student, courseContent: text, history, includedSegments: profile.segments });
       setPreview(out.feedback); setEditing(out.feedback);
       notify.dismiss(tid);
       notify.success("生成完成");

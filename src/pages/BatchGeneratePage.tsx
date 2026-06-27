@@ -91,7 +91,7 @@ export default function BatchGeneratePage() {
     setPerStudent(prev => prev.map((p, i) => i === idx ? { ...p, status: "generating", error: "" } : p));
     try {
       const history = historyMap[ps.student.id] ?? [];
-      const out = await generateFeedback({ apiKey, profile, student: ps.student, courseContent: ps.content, history });
+      const out = await generateFeedback({ apiKey, profile, student: ps.student, courseContent: ps.content, history, includedSegments: profile.segments });
       setPerStudent(prev => prev.map((p, i) => i === idx ? { ...p, status: "done", feedback: out.feedback, aiOriginal: out.feedback } : p));
       return "done";
     } catch (e: any) {
