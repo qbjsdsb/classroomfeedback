@@ -5,9 +5,12 @@ import { listFeedbacksByStudent, updateFeedback, listLearningFeedbacksByStudent 
 import { extractProfile, ProfileProposal } from "../ai/extractProfile";
 import { getApiKey } from "../hooks/useSettings";
 import { getStudent, updateStudent } from "../hooks/useStudents";
+import { useNotify } from "../hooks/useNotify";
+import { EmptyState } from "../components/EmptyState";
 
 export default function StudentDetailPage() {
   const { id } = useParams();
+  const notify = useNotify();
   const [student, setStudent] = useState<Student | null>(null);
   const [list, setList] = useState<Feedback[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
@@ -23,20 +26,21 @@ export default function StudentDetailPage() {
   const toggleLearn = async (f: Feedback) => { await updateFeedback(f.id!, { includeInLearning: !f.includeInLearning }); await reload(); };
 
   const [proposal, setProposal] = useState<ProfileProposal | null>(null);
-  const [extractStatus, setExtractStatus] = useState("");
 
   const doExtract = async () => {
     if (!student?.id) return;
+    const apiKey = await getApiKey();
+    if (!apiKey) { notify.error("请先设置 API Key"); return; }
+    const list = await listLearningFeedbacksByStudent(student.id);
+    if (list.length < 3) { notify.error(`仅 ${list.length} 条可学习反馈，至少需 3 条`); return; }
+    const tid = notify.info("提炼中…", { duration: 0 });
     try {
-      setExtractStatus("提炼中…"); setProposal(null);
-      const apiKey = await getApiKey();
-      if (!apiKey) { setExtractStatus("请先设置 API Key"); return; }
-      const list = await listLearningFeedbacksByStudent(student.id);
-      if (list.length < 3) { setExtractStatus(`仅 ${list.length} 条可学习反馈，至少需 3 条`); return; }
+      setProposal(null);
       const out = await extractProfile({ apiKey, studentName: student.name, feedbackTexts: list.map(f => f.finalText) });
-      setProposal(out); setExtractStatus("");
-    } catch (e: any) { setExtractStatus("失败：" + e.message); }
-    setTimeout(() => setExtractStatus(""), 3000);
+      setProposal(out);
+      notify.dismiss(tid);
+      notify.success(`基于 ${out.sourceFeedbackCount} 条反馈提炼完成`);
+    } catch (e: any) { notify.dismiss(tid); notify.error("失败：" + e.message); }
   };
 
   const applyProposal = async (field: "weaknesses" | "personality" | "parentFocus", mode: "append" | "replace") => {
@@ -53,7 +57,9 @@ export default function StudentDetailPage() {
     <div className="space-y-3">
       <Link to="/students" className="inline-block text-sm text-blue-600 hover:underline mb-1">← 返回学生列表</Link>
       <h1 className="text-xl font-bold">{student.name} 的历史反馈</h1>
-      {list.length === 0 && <p className="text-gray-500 text-sm">暂无历史反馈</p>}
+      {list.length === 0 && (
+        <EmptyState title="暂无历史反馈" hint="为该学生生成第一条反馈" action={<Link to="/generate" className="btn-primary">去生成</Link>} />
+      )}
       {list.map(f => (
         <div key={f.id} className="card space-y-1">
           <p className="text-xs text-gray-500">{new Date(f.createdAt).toLocaleString()} · {f.subject}</p>
@@ -80,7 +86,6 @@ export default function StudentDetailPage() {
         <div className="card space-y-2">
           <h2 className="font-semibold">AI 提炼学生特征</h2>
           <button onClick={doExtract} className="btn-purple">从反馈提炼特征</button>
-          {extractStatus && <p className="text-sm text-purple-600">{extractStatus}</p>}
           {proposal && (
             <div className="space-y-2">
               <p className="text-xs text-gray-500">基于 {proposal.sourceFeedbackCount} 条反馈提炼</p>

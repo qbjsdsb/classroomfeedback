@@ -5,16 +5,16 @@ import { listSamples, addSample } from "../hooks/useHistorySamples";
 import { countDiffs, runAnalyze, applySuggestion, rejectSuggestion, applyAndLock } from "../hooks/useSuggestions";
 import { EditSuggestion } from "../ai/analyzeEdits";
 import { db } from "../db/schema";
+import { useNotify } from "../hooks/useNotify";
 
 export default function SpecProfilePage() {
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
   const [curId, setCurId] = useState<number | null>(null);
   const [samples, setSamples] = useState<{ rawText: string }[]>([]);
   const [newSample, setNewSample] = useState("");
-  const [status, setStatus] = useState("");
   const [diffCount, setDiffCount] = useState(0);
   const [suggestions, setSuggestions] = useState<(EditSuggestion & { id?: number })[]>([]);
-  const [analyzeStatus, setAnalyzeStatus] = useState("");
+  const notify = useNotify();
   const cur = profiles.find(p => p.id === curId) ?? null;
 
   const reload = async () => { setProfiles(await listProfiles()); };
@@ -40,28 +40,32 @@ export default function SpecProfilePage() {
 
   const reanalyze = async () => {
     if (!cur?.id) return;
-    try { setStatus("分析中…"); await relearn(cur.id); await reload(); setStatus("已更新"); }
-    catch (e: any) { setStatus("失败：" + e.message); }
-    setTimeout(() => setStatus(""), 2500);
+    const tid = notify.info("分析中…", { duration: 0 });
+    try {
+      await relearn(cur.id); await reload();
+      notify.dismiss(tid);
+      notify.success("已更新");
+    } catch (e: any) { notify.dismiss(tid); notify.error("失败：" + e.message); }
   };
   const doAnalyze = async () => {
     if (!cur) return;
+    const tid = notify.info("分析中…", { duration: 0 });
     try {
-      setAnalyzeStatus("分析中…"); setSuggestions([]);
+      setSuggestions([]);
       const list = await runAnalyze(cur);
       const pending = await db.suggestions.where("specProfileId").equals(cur.id!).toArray();
       const map = new Map(pending.map(p => [p.field + "|" + p.proposal, p.id]));
       setSuggestions(list.map(s => ({ ...s, id: map.get(s.field + "|" + s.proposal) })));
-      setAnalyzeStatus(list.length === 0 ? "未发现明显修改模式" : "");
-    } catch (e: any) { setAnalyzeStatus("失败：" + e.message); }
-    setTimeout(() => setAnalyzeStatus(""), 3000);
+      notify.dismiss(tid);
+      if (list.length === 0) notify.info("未发现明显修改模式");
+      else notify.success(`发现 ${list.length} 条修改建议`);
+    } catch (e: any) { notify.dismiss(tid); notify.error("失败：" + e.message); }
   };
   const upload = async () => {
     if (!cur?.id || !newSample.trim()) return;
     await addSample(cur.id, newSample, "paste"); setNewSample("");
     setSamples(await listSamples(cur.id));
-    setStatus("您新上传了反馈，建议重新分析 [立即更新]");
-    setTimeout(() => setStatus(""), 3000);
+    notify.info("您新上传了反馈，建议重新分析 [立即更新]");
   };
   const doCreate = async () => {
     const id = await createProfile("通用", "我的规范档");
@@ -152,7 +156,6 @@ export default function SpecProfilePage() {
             <button onClick={upload} className="btn-soft">添加样本</button>
             <button onClick={reanalyze} className="btn-primary">重新分析（限最近50条）</button>
           </div>
-          {status && <p className="text-sm text-blue-600">{status}</p>}
         </div>
       )}
 
@@ -163,7 +166,6 @@ export default function SpecProfilePage() {
           <button onClick={doAnalyze} disabled={diffCount < 20} className="btn-purple">
             分析我的修改习惯
           </button>
-          {analyzeStatus && <p className="text-sm text-purple-600">{analyzeStatus}</p>}
           {suggestions.map((s, i) => (
             <div key={i} className="border border-purple-200 rounded-md p-2 space-y-1 bg-purple-50">
               <p className="text-xs text-gray-500">字段：{s.field}（证据 {s.evidenceCount} 条）</p>
