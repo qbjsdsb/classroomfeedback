@@ -58,7 +58,7 @@ export default function App() {
           <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200">
             <div className="max-w-content mx-auto px-4 flex items-center gap-2 h-14">
               <NavLink to="/" className="flex items-center gap-2 mr-2 font-bold text-gray-800 shrink-0">
-                <img src="/favicon.svg" alt="" className="w-7 h-7" />
+                <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="w-7 h-7" />
                 <span className="hidden sm:inline">课后反馈生成器</span>
               </NavLink>
               <div className="flex items-center gap-1 overflow-x-auto">

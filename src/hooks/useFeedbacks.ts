@@ -2,7 +2,8 @@ import { db } from "../db/schema";
 import { Feedback, Student } from "../types";
 
 export async function listFeedbacksByStudent(studentId: number): Promise<Feedback[]> {
-  return db.feedbacks.where("studentId").equals(studentId).toArray();
+  // sortBy("createdAt") 保证按时间升序；where().equals() 默认按主键序，主键顺序≠插入时间顺序
+  return db.feedbacks.where("studentId").equals(studentId).sortBy("createdAt");
 }
 export async function saveFeedback(f: Omit<Feedback, "id" | "createdAt">): Promise<number> {
   return db.feedbacks.add({ ...f, createdAt: Date.now() });

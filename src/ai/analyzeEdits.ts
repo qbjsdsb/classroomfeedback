@@ -1,14 +1,8 @@
 // src/ai/analyzeEdits.ts
 import { callDeepSeek } from "./client";
 import { analyzeEditsPrompt } from "./prompts";
+import { parseJsonLoose } from "./parse";
 import { SpecProfile } from "../types";
-
-function parseJsonLoose(raw: string): any {
-  let s = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-  const start = s.indexOf("{"); const end = s.lastIndexOf("}");
-  if (start >= 0 && end > start) s = s.slice(start, end + 1);
-  return JSON.parse(s);
-}
 
 export interface EditSuggestion {
   field: string;

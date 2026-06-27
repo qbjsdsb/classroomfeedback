@@ -83,16 +83,20 @@ export default function BatchGeneratePage() {
     finally { setBusy(false); }
   };
 
-  const generateOne = async (idx: number, apiKey: string, profile: SpecProfile, historyMap: Record<number, Feedback[]>) => {
+  // 返回 "done" | "error" 让调用方能可靠统计结果
+  // 不能依赖 setPerStudent 后读 perStudent 闭包——闭包变量不会随 setState 更新
+  const generateOne = async (idx: number, apiKey: string, profile: SpecProfile, historyMap: Record<number, Feedback[]>): Promise<"done" | "error"> => {
     const ps = perStudent[idx];
-    if (!ps.student.id) return;
+    if (!ps.student.id) return "error";
     setPerStudent(prev => prev.map((p, i) => i === idx ? { ...p, status: "generating", error: "" } : p));
     try {
       const history = historyMap[ps.student.id] ?? [];
       const out = await generateFeedback({ apiKey, profile, student: ps.student, courseContent: ps.content, history });
       setPerStudent(prev => prev.map((p, i) => i === idx ? { ...p, status: "done", feedback: out.feedback, aiOriginal: out.feedback } : p));
+      return "done";
     } catch (e: any) {
       setPerStudent(prev => prev.map((p, i) => i === idx ? { ...p, status: "error", error: e.message } : p));
+      return "error";
     }
   };
 
@@ -106,11 +110,14 @@ export default function BatchGeneratePage() {
     for (const ps of perStudent) {
       if (ps.student.id) historyMap[ps.student.id] = await listFeedbacksByStudent(ps.student.id);
     }
+    // 用局部 results 数组累计结果，避免读 perStudent 闭包旧值（旧值 status 永远是 "pending"）
+    const results: ("done" | "error")[] = [];
     for (let i = 0; i < perStudent.length; i++) {
-      await generateOne(i, apiKey, profile, historyMap);
+      const r = await generateOne(i, apiKey, profile, historyMap);
+      results.push(r);
     }
     notify.dismiss(tid);
-    const failed = perStudent.filter(p => p.status === "error").length;
+    const failed = results.filter(r => r === "error").length;
     if (failed > 0) notify.error(`${failed} 个生成失败，可重试`);
     else notify.success("全部生成完成");
     setBusy(false);
@@ -127,8 +134,10 @@ export default function BatchGeneratePage() {
     const tid = notify.info("重新生成中…", { duration: 0 });
     const history = await listFeedbacksByStudent(sid);
     const historyMap: Record<number, Feedback[]> = { [sid]: history };
-    await generateOne(idx, apiKey, profile, historyMap);
+    const result = await generateOne(idx, apiKey, profile, historyMap);
     notify.dismiss(tid);
+    if (result === "done") notify.success("重新生成完成");
+    else notify.error("重新生成失败，可再次重试");
     setBusy(false);
   };
 

@@ -1,13 +1,7 @@
 // src/ai/extractProfile.ts
 import { callDeepSeek } from "./client";
 import { extractProfilePrompt } from "./prompts";
-
-function parseJsonLoose(raw: string): any {
-  let s = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-  const start = s.indexOf("{"); const end = s.lastIndexOf("}");
-  if (start >= 0 && end > start) s = s.slice(start, end + 1);
-  return JSON.parse(s);
-}
+import { parseJsonLoose } from "./parse";
 
 export interface ProfileProposal {
   personalityProposal: string;
