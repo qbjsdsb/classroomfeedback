@@ -156,11 +156,11 @@ export default function BatchGeneratePage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="border rounded p-2">
-              <option value="">选规范档…</option>
+            <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="input">
+              <option value="">选择规范档…</option>
               {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            <input className="border rounded p-2" placeholder="科目（如数学）" value={subject} onChange={e => setSubject(e.target.value)} />
+            <input className="input" placeholder="科目（如数学）" value={subject} onChange={e => setSubject(e.target.value)} />
           </div>
           <div className="flex gap-2 flex-wrap">
             {isDesktop() && supported && (
@@ -170,10 +170,10 @@ export default function BatchGeneratePage() {
             )}
           </div>
           {recording && interim && <p className="text-xs text-gray-500">实时：{interim}</p>}
-          <textarea className="block w-full border rounded p-2 h-40" placeholder="点名口述整节课：张三今天…；李四今天…" value={text} onChange={e => setText(e.target.value)} />
+          <textarea className="input h-40" placeholder="点名口述整节课：张三今天…；李四今天…" value={text} onChange={e => setText(e.target.value)} />
           <div className="flex gap-2">
-            <button onClick={doCorrect} disabled={busy || !text} className="bg-gray-200 px-3 py-1 rounded text-sm disabled:opacity-50">{busy ? "处理中…" : "AI 纠错"}</button>
-            <button onClick={doSplit} disabled={busy} className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">{busy ? "拆分中…" : "拆分并确认"}</button>
+            <button onClick={doCorrect} disabled={busy || !text} className="btn-soft">{busy ? "处理中…" : "AI 纠错"}</button>
+            <button onClick={doSplit} disabled={busy} className="btn-primary">{busy ? "拆分中…" : "拆分并确认"}</button>
           </div>
         </div>
       )}
@@ -182,16 +182,16 @@ export default function BatchGeneratePage() {
         <div className="space-y-3">
           <h2 className="font-semibold">确认拆分（可手动调整每个学生的内容）</h2>
           {perStudent.map((ps, i) => (
-            <div key={ps.student.id} className="border rounded p-2 space-y-1">
+            <div key={ps.student.id} className="card p-2 space-y-1">
               <p className="font-semibold text-sm">{ps.student.name}</p>
-              <textarea className="block w-full border rounded p-2 h-20 text-sm" value={ps.content}
+              <textarea className="input h-20 text-sm" value={ps.content}
                 onChange={e => setPerStudent(prev => prev.map((p, j) => j === i ? { ...p, content: e.target.value } : p))} />
               {ps.content === "" && <p className="text-xs text-orange-600">未识别到内容，请手动补充</p>}
             </div>
           ))}
           <div className="flex gap-2">
-            <button onClick={() => setStep("input")} className="text-sm text-gray-600">返回修改</button>
-            <button onClick={doBatchGenerate} disabled={busy} className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">
+            <button onClick={() => setStep("input")} className="text-sm text-gray-600 hover:text-gray-800">返回修改</button>
+            <button onClick={doBatchGenerate} disabled={busy} className="btn-primary">
               {busy ? `正在生成…（${perStudent.filter(p => p.status === "done" || p.status === "error").length}/${perStudent.length}）` : "批量生成"}
             </button>
           </div>
@@ -202,7 +202,7 @@ export default function BatchGeneratePage() {
         <div className="space-y-3">
           <h2 className="font-semibold">生成结果（可编辑，单个可重试）</h2>
           {perStudent.map((ps, i) => (
-            <div key={ps.student.id} className="border rounded p-3 space-y-1">
+            <div key={ps.student.id} className="card space-y-1">
               <div className="flex justify-between items-center">
                 <p className="font-semibold">{ps.student.name}</p>
                 <span className={`text-xs ${ps.status === "done" ? "text-green-600" : ps.status === "error" ? "text-red-600" : "text-gray-500"}`}>
@@ -211,19 +211,19 @@ export default function BatchGeneratePage() {
               </div>
               {ps.status === "error" && <p className="text-xs text-red-600">{ps.error}</p>}
               {ps.status === "done" && (
-                <textarea className="block w-full border rounded p-2 h-32 text-sm" value={ps.feedback}
+                <textarea className="input h-32 text-sm" value={ps.feedback}
                   onChange={e => setPerStudent(prev => prev.map((p, j) => j === i ? { ...p, feedback: e.target.value } : p))} />
               )}
               <div className="flex gap-2 text-sm">
-                {ps.status === "error" && <button onClick={() => retryOne(i)} disabled={busy} className="text-blue-600 disabled:opacity-50">重试</button>}
-                {ps.status === "done" && <button onClick={() => retryOne(i)} disabled={busy} className="text-blue-600 disabled:opacity-50">重新生成</button>}
-                {ps.status === "done" && <button onClick={() => navigator.clipboard.writeText(ps.feedback)} className="text-gray-600">复制</button>}
+                {ps.status === "error" && <button onClick={() => retryOne(i)} disabled={busy} className="btn-ghost">重试</button>}
+                {ps.status === "done" && <button onClick={() => retryOne(i)} disabled={busy} className="btn-ghost">重新生成</button>}
+                {ps.status === "done" && <button onClick={() => navigator.clipboard.writeText(ps.feedback)} className="btn-soft">复制</button>}
               </div>
             </div>
           ))}
           <div className="flex gap-2">
-            <button onClick={() => setStep("splitConfirm")} className="text-sm text-gray-600">返回拆分确认</button>
-            <button onClick={saveAll} className="bg-green-600 text-white px-4 py-2 rounded">批量保存（仅保存已生成的）</button>
+            <button onClick={() => setStep("splitConfirm")} className="text-sm text-gray-600 hover:text-gray-800">返回拆分确认</button>
+            <button onClick={saveAll} className="btn-success">批量保存（仅保存已生成的）</button>
           </div>
         </div>
       )}

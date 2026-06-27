@@ -91,11 +91,11 @@ export default function GeneratePage() {
       <h1 className="text-xl font-bold">生成反馈</h1>
       {error && <p className="text-red-600 text-sm">{error}</p>}
       <div className="grid grid-cols-2 gap-2">
-        <select value={studentId ?? ""} onChange={e => setStudentId(Number(e.target.value))} className="border rounded p-2">
+        <select value={studentId ?? ""} onChange={e => setStudentId(Number(e.target.value))} className="input">
           <option value="">选择学生…</option>
           {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
-        <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="border rounded p-2">
+        <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="input">
           <option value="">选择规范档…</option>
           {availableProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
@@ -111,24 +111,24 @@ export default function GeneratePage() {
           )}
         </div>
         {recording && interim && <p className="text-xs text-gray-500">实时：{interim}</p>}
-        <textarea className="block w-full border rounded p-2 h-40" placeholder="录音转写或手动输入本节课内容…" value={text} onChange={e => setText(e.target.value)} />
-        <button onClick={doCorrect} disabled={correcting || !text} className="bg-gray-200 px-3 py-1 rounded text-sm disabled:opacity-50">
+        <textarea className="input h-40" placeholder="录音转写或手动输入本节课内容…" value={text} onChange={e => setText(e.target.value)} />
+        <button onClick={doCorrect} disabled={correcting || !text} className="btn-soft">
           {correcting ? "纠错中…" : "AI 纠错"}
         </button>
       </div>
 
-      <button onClick={doGenerate} disabled={generating || !text || !studentId || !profileId} className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">
+      <button onClick={doGenerate} disabled={generating || !text || !studentId || !profileId} className="btn-primary">
         {generating ? "正在生成…" : "生成反馈"}
       </button>
 
       {preview && (
-        <div className="space-y-2 border rounded p-3">
+        <div className="card space-y-2">
           <h2 className="font-semibold">预览（可编辑）</h2>
-          <textarea className="block w-full border rounded p-2 h-48" value={editing} onChange={e => setEditing(e.target.value)} />
+          <textarea className="input h-48" value={editing} onChange={e => setEditing(e.target.value)} />
           <div className="flex gap-2">
-            <button onClick={doGenerate} disabled={generating} className="text-sm text-blue-600 disabled:opacity-50">重新生成</button>
-            <button onClick={doSave} className="bg-green-600 text-white px-3 py-1 rounded text-sm">确认保存</button>
-            <button onClick={() => navigator.clipboard.writeText(editing)} className="bg-gray-200 px-3 py-1 rounded text-sm">复制</button>
+            <button onClick={doGenerate} disabled={generating} className="btn-ghost">重新生成</button>
+            <button onClick={doSave} className="btn-success">确认保存</button>
+            <button onClick={() => navigator.clipboard.writeText(editing)} className="btn-soft">复制</button>
           </div>
           {saved && <p className="text-green-600 text-sm">已保存（已记录 AI 原文与你的修改，供未来学习）</p>}
         </div>

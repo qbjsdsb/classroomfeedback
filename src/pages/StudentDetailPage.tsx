@@ -48,25 +48,25 @@ export default function StudentDetailPage() {
     await reload();
   };
 
-  if (!student) return <div>未找到学生</div>;
+  if (!student) return <div className="text-gray-500">未找到学生</div>;
   return (
     <div className="space-y-3">
       <h1 className="text-xl font-bold">{student.name} 的历史反馈</h1>
       {list.length === 0 && <p className="text-gray-500 text-sm">暂无历史反馈</p>}
       {list.map(f => (
-        <div key={f.id} className="border rounded p-3 space-y-1">
+        <div key={f.id} className="card space-y-1">
           <p className="text-xs text-gray-500">{new Date(f.createdAt).toLocaleString()} · {f.subject}</p>
           {editId === f.id ? (
             <>
-              <textarea className="block w-full border rounded p-2 h-32" value={editText} onChange={e => setEditText(e.target.value)} />
-              <button onClick={() => saveEdit(f.id!)} className="text-sm text-blue-600">保存</button>
+              <textarea className="input h-32" value={editText} onChange={e => setEditText(e.target.value)} />
+              <button onClick={() => saveEdit(f.id!)} className="btn-ghost">保存</button>
             </>
           ) : (
             <>
               <p className="whitespace-pre-wrap">{f.finalText}</p>
               <div className="flex gap-2 text-sm items-center">
-                <button onClick={() => { setEditId(f.id!); setEditText(f.finalText); }} className="text-blue-600">编辑</button>
-                <button onClick={() => navigator.clipboard.writeText(f.finalText)} className="text-gray-600">复制</button>
+                <button onClick={() => { setEditId(f.id!); setEditText(f.finalText); }} className="btn-ghost">编辑</button>
+                <button onClick={() => navigator.clipboard.writeText(f.finalText)} className="btn-ghost">复制</button>
                 <label className="text-xs flex items-center gap-1">
                   <input type="checkbox" checked={f.includeInLearning} onChange={() => toggleLearn(f)} /> 纳入学习库
                 </label>
@@ -76,9 +76,9 @@ export default function StudentDetailPage() {
         </div>
       ))}
       {student && (
-        <div className="border rounded p-3 space-y-2">
+        <div className="card space-y-2">
           <h2 className="font-semibold">AI 提炼学生特征</h2>
-          <button onClick={doExtract} className="bg-purple-600 text-white px-3 py-1 rounded text-sm">从反馈提炼特征</button>
+          <button onClick={doExtract} className="btn-purple">从反馈提炼特征</button>
           {extractStatus && <p className="text-sm text-purple-600">{extractStatus}</p>}
           {proposal && (
             <div className="space-y-2">
@@ -88,14 +88,14 @@ export default function StudentDetailPage() {
                 ["personality", "性格特点", proposal.personalityProposal],
                 ["parentFocus", "家长关注", proposal.parentFocusProposal],
               ] as const).map(([field, label, text]) => text ? (
-                <div key={field} className="border rounded p-2 bg-purple-50 space-y-1">
+                <div key={field} className="border border-purple-200 rounded-md p-2 bg-purple-50 space-y-1">
                   <p className="text-xs font-semibold">{label}提议</p>
                   <p className="text-sm">{text}</p>
                   <p className="text-xs text-gray-500">当前：{student[field] || "（空）"}</p>
                   <div className="flex gap-2 text-xs">
-                    <button onClick={() => applyProposal(field, "append")} className="text-green-600">采纳追加</button>
-                    <button onClick={() => applyProposal(field, "replace")} className="text-blue-600">替换</button>
-                    <button onClick={() => setProposal({ ...proposal, [field === "weaknesses" ? "weaknessesProposal" : field === "personality" ? "personalityProposal" : "parentFocusProposal"]: "" })} className="text-gray-600">忽略</button>
+                    <button onClick={() => applyProposal(field, "append")} className="text-green-600 hover:bg-green-50">采纳追加</button>
+                    <button onClick={() => applyProposal(field, "replace")} className="text-blue-600 hover:bg-blue-50">替换</button>
+                    <button onClick={() => setProposal({ ...proposal, [field === "weaknesses" ? "weaknessesProposal" : field === "personality" ? "personalityProposal" : "parentFocusProposal"]: "" })} className="text-gray-600 hover:bg-gray-100">忽略</button>
                   </div>
                 </div>
               ) : null)}
