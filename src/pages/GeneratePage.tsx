@@ -23,6 +23,7 @@ export default function GeneratePage() {
   const [text, setText] = useState("");
   const [correcting, setCorrecting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [segIncluded, setSegIncluded] = useState<Set<number>>(new Set());
   const [preview, setPreview] = useState("");
   const [editing, setEditing] = useState("");
 
@@ -35,6 +36,11 @@ export default function GeneratePage() {
   }, []);
   useEffect(() => { saveDraft(text); }, [text]);
   useEffect(() => { setAvailableProfiles(profiles); }, [profiles]);
+  useEffect(() => {
+    const p = profiles.find(p => p.id === profileId);
+    if (p) setSegIncluded(new Set(p.segments.map((_, i) => i)));
+    else setSegIncluded(new Set());
+  }, [profileId, profiles]);
   useEffect(() => {
     (async () => {
       const student = students.find(s => s.id === studentId);
@@ -68,11 +74,13 @@ export default function GeneratePage() {
     const student = students.find(s => s.id === studentId);
     const profile = profiles.find(p => p.id === profileId);
     if (!student || !profile) { notify.error("请选择学生和规范档"); return; }
+    const includedSegments = profile.segments.filter((_, i) => segIncluded.has(i));
+    if (includedSegments.length === 0) { notify.error("请至少选择一个段落"); return; }
     setGenerating(true); setPreview("");
     const tid = notify.info("生成中…", { duration: 0 });
     try {
       const history = student.id ? await listFeedbacksByStudent(student.id) : [];
-      const out = await generateFeedback({ apiKey, profile, student, courseContent: text, history, includedSegments: profile.segments });
+      const out = await generateFeedback({ apiKey, profile, student, courseContent: text, history, includedSegments });
       setPreview(out.feedback); setEditing(out.feedback);
       notify.dismiss(tid);
       notify.success("生成完成");
@@ -105,6 +113,30 @@ export default function GeneratePage() {
           {availableProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
+
+      {(() => {
+        const p = profiles.find(p => p.id === profileId);
+        if (!p || p.segments.length === 0) return null;
+        return (
+          <div className="card p-2 space-y-1">
+            <p className="text-sm font-semibold">本次段落（默认全选，可临时取消）</p>
+            {p.segments.map((s, i) => (
+              <label key={i} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={segIncluded.has(i)}
+                  onChange={() => setSegIncluded(prev => {
+                    const next = new Set(prev);
+                    if (next.has(i)) next.delete(i); else next.add(i);
+                    return next;
+                  })}
+                />
+                <span>{s.title || "（无标题）"}（约{s.targetWords}字）</span>
+              </label>
+            ))}
+          </div>
+        );
+      })()}
 
       <div className="space-y-2">
         <div className="flex gap-2 flex-wrap">
