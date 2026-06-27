@@ -57,3 +57,12 @@ ${JSON_INSTRUCTION}
 输出 JSON：{"suggestions":[{"field":"字段路径如opening/styleNote/segments[0].contentPoints","current":"当前值","proposal":"建议值","observed":"观察到的修改模式","evidenceCount":数字}]}。无建议时返回 {"suggestions":[]}。`;
   return [{ role: "system", content: system }, { role: "user", content: diffTxt }];
 }
+
+export function extractProfilePrompt(studentName: string, feedbackTexts: string[]) {
+  const txt = feedbackTexts.map((f, i) => `--- 反馈${i + 1} ---\n${f}`).join("\n\n");
+  const system = `你是学生画像分析助手。根据以下该学生的历史反馈，提炼该学生的性格特点、薄弱点、家长关注点。只根据反馈内容提炼，不编造。某方面无依据则对应字段返回空字符串。
+学生姓名：${studentName}
+${JSON_INSTRUCTION}
+输出 JSON：{"personalityProposal":"性格特点提炼","weaknessesProposal":"薄弱点提炼","parentFocusProposal":"家长关注点提炼"}`;
+  return [{ role: "system", content: system }, { role: "user", content: txt }];
+}
