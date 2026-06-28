@@ -32,6 +32,7 @@ export interface SpecProfile {
   opening: string;
   ending: string;
   styleFeatures: StyleFeatures;
+  exemplarSamples: string[];  // learn 时选的 1-2 条代表性样本，生成时作为金标准
   lockedFields: string[];
   isBuiltin: boolean;
   createdAt: number;

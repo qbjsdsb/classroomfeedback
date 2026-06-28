@@ -6,6 +6,7 @@ const profile: SpecProfile = {
   subject: "数学", name: "p", tone: "正式书面", styleNote: "",
   segments: [], opening: "该生今日", ending: "建议",
   styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+  exemplarSamples: [],
   lockedFields: [], isBuiltin: false, createdAt: 0,
 };
 

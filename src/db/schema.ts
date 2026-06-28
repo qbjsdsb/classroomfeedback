@@ -70,6 +70,21 @@ export class FeedbackDB extends Dexie {
         }
       });
     });
+    this.version(5).stores({
+      students: "++id, name, createdAt",
+      specProfiles: "++id, subject, isBuiltin",
+      historySamples: "++id, specProfileId",
+      feedbacks: "++id, studentId, specProfileId, createdAt",
+      tokenUsage: "++id, callType, timestamp",
+      settings: "++id",
+      suggestions: "++id, specProfileId, status, createdAt",
+    }).upgrade((trans) => {
+      return trans.table("specProfiles").toCollection().modify((p: any) => {
+        if (!Array.isArray(p.exemplarSamples)) {
+          p.exemplarSamples = [];
+        }
+      });
+    });
   }
 }
 
