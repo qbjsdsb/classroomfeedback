@@ -6,21 +6,54 @@
   html {
     -webkit-text-size-adjust: 100%;
   }
+  :root {
+    --bg: 248 250 252;
+    --surface: 255 255 255;
+    --surface-2: 243 244 246;
+    --border: 229 231 235;
+    --text: 31 41 55;
+    --text-muted: 107 114 128;
+    --primary: 37 99 235;
+    --primary-hover: 29 78 216;
+    --primary-surface: 219 234 254;
+  }
+  .dark {
+    --bg: 17 24 39;
+    --surface: 31 41 55;
+    --surface-2: 55 65 81;
+    --border: 55 65 81;
+    --text: 229 231 235;
+    --text-muted: 156 163 175;
+    --primary: 59 130 246;
+    --primary-hover: 96 165 250;
+    --primary-surface: 30 58 138;
+  }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
       "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC",
       sans-serif;
-    @apply text-gray-800 antialiased;
+    @apply bg-bg text-text antialiased;
   }
 }
 
 @layer components {
-  /* 卡片：统一层次 */
+  /* 页面骨架 */
+  .page-header {
+    @apply flex items-center justify-between gap-2 mb-4;
+  }
+  .section-title {
+    @apply text-base font-semibold text-text;
+  }
+
+  /* 卡片层次 */
   .card {
-    @apply bg-white border border-gray-200 rounded-lg shadow-sm p-4;
+    @apply bg-surface border border-border rounded-lg shadow-card p-4;
   }
   .card-hover {
-    @apply transition hover:shadow-md hover:border-gray-300;
+    @apply transition hover:shadow-card-hover hover:border-primary/40;
+  }
+  .card-accent {
+    @apply card border-l-4 border-l-primary;
   }
 
   /* 按钮基础 */
@@ -28,34 +61,45 @@
     @apply inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800;
+    @apply btn bg-primary text-white hover:bg-primary-hover active:opacity-90;
   }
   .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700;
-  }
-  .btn-soft {
-    @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200;
+    @apply btn bg-emerald-600 text-white hover:bg-emerald-700;
   }
   .btn-ghost {
-    @apply btn text-blue-600 hover:bg-blue-50;
+    @apply btn text-primary hover:bg-primary-surface;
   }
   .btn-danger {
-    @apply btn text-red-600 hover:bg-red-50;
+    @apply btn bg-red-600 text-white hover:bg-red-700;
   }
-  .btn-purple {
-    @apply btn bg-purple-600 text-white hover:bg-purple-700;
+  .btn-soft {
+    @apply btn bg-surface-2 text-text hover:bg-border;
   }
 
-  /* 表单元素统一 */
+  /* 表单元素 */
+  .form-field {
+    @apply space-y-1;
+  }
   .input {
-    @apply block w-full border border-gray-300 rounded-md p-2 text-sm bg-white
-      focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500
-      placeholder:text-gray-400;
+    @apply block w-full border border-border rounded-md px-3 py-2 text-sm bg-surface text-text
+      focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary
+      placeholder:text-text-muted;
   }
   .label {
-    @apply block text-sm font-medium text-gray-600 mb-1;
+    @apply block text-sm font-medium text-text;
   }
   .hint {
-    @apply text-xs text-gray-500;
+    @apply text-xs text-text-muted;
+  }
+
+  /* 导航 */
+  .nav-link {
+    @apply px-3 py-1.5 rounded-md text-sm transition-colors flex items-center gap-1.5;
+  }
+  .nav-link-active {
+    @apply bg-primary-surface text-primary font-medium;
+  }
+  .nav-link-inactive {
+    @apply text-text-muted hover:bg-surface-2 hover:text-text;
   }
 }

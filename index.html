@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="为教培老师打造的课后反馈生成器：录音或手动输入课程内容，AI 学习你的历史反馈风格，一键生成个性化反馈。" />
     <title>课后反馈生成器</title>
+    <script>
+      (function () {
+        var s = localStorage.getItem("theme");
+        var d = s ? s === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+        if (d) document.documentElement.classList.add("dark");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
