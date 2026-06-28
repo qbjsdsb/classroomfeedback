@@ -62,28 +62,34 @@ export default function StudentDetailPage() {
       {list.length === 0 && (
         <EmptyState title="暂无历史反馈" hint="为该学生生成第一条反馈" action={<Link to="/generate" className="btn-primary">去生成</Link>} />
       )}
-      {list.map(f => (
-        <div key={f.id} className="card space-y-1">
-          <p className="text-xs text-text-muted">{new Date(f.createdAt).toLocaleString()} · {f.subject}</p>
-          {editId === f.id ? (
-            <>
-              <textarea className="input h-32" value={editText} onChange={e => setEditText(e.target.value)} />
-              <button onClick={() => saveEdit(f.id!)} className="btn-ghost">保存</button>
-            </>
-          ) : (
-            <>
-              <p className="whitespace-pre-wrap">{f.finalText}</p>
-              <div className="flex gap-2 text-sm items-center">
-                <button onClick={() => { setEditId(f.id!); setEditText(f.finalText); }} className="btn-ghost">编辑</button>
-                <button onClick={() => navigator.clipboard.writeText(f.finalText)} className="btn-ghost">复制</button>
-                <label className="text-xs flex items-center gap-1">
-                  <input type="checkbox" checked={f.includeInLearning} onChange={() => toggleLearn(f)} /> 纳入学习库
-                </label>
-              </div>
-            </>
-          )}
-        </div>
-      ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {list.map(f => (
+          <div key={f.id} className="card space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-text-muted">
+                {new Date(f.createdAt).toLocaleDateString()} · {f.subject}
+              </span>
+              <label className="text-xs flex items-center gap-1 text-text-muted">
+                <input type="checkbox" checked={f.includeInLearning} onChange={() => toggleLearn(f)} /> 学习库
+              </label>
+            </div>
+            {editId === f.id ? (
+              <>
+                <textarea className="input h-32" value={editText} onChange={e => setEditText(e.target.value)} />
+                <button onClick={() => saveEdit(f.id!)} className="btn-ghost text-xs">保存</button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm whitespace-pre-wrap line-clamp-4">{f.finalText}</p>
+                <div className="flex gap-2 text-xs">
+                  <button onClick={() => { setEditId(f.id!); setEditText(f.finalText); }} className="btn-ghost">编辑</button>
+                  <button onClick={() => navigator.clipboard.writeText(f.finalText)} className="btn-ghost">复制</button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
       {student && (
         <div className="card space-y-2">
           <h2 className="section-title">AI 提炼学生特征</h2>

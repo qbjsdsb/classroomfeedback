@@ -10,14 +10,24 @@ const STEPS: { n: number; title: string; desc: string; to: string; cta: string }
 export default function HomePage() {
   return (
     <div className="space-y-8">
-      <div className="card">
-        <div className="text-[11px] tracking-[2px] uppercase text-text-muted mb-2">FOR EDUCATORS</div>
-        <h1 className="page-title text-3xl font-bold">ClassFlow · 课后反馈生成器</h1>
-        <p className="mt-3 text-text-muted text-sm leading-relaxed">
-          录音或手动输入课程内容，AI 学习你的历史反馈风格，一键生成符合机构规范的个性化课后反馈。
-          数据全部存于本机浏览器，安全可控。
-        </p>
-      </div>
+      <section className="card hero-gradient relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-primary/5" />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/5" />
+        <div className="relative">
+          <div className="text-[11px] tracking-[2px] uppercase text-text-muted mb-2">FOR EDUCATORS</div>
+          <h1 className="page-title text-3xl sm:text-4xl font-bold text-text">
+            ClassFlow · 课后反馈生成器
+          </h1>
+          <p className="mt-3 text-text-muted text-sm sm:text-base leading-relaxed max-w-2xl">
+            录音或手动输入课程内容，AI 学习你的历史反馈风格，一键生成符合机构规范的个性化课后反馈。
+            数据全部存于本机浏览器，安全可控。
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link to="/generate" className="btn-primary px-4 py-2">立即生成反馈 →</Link>
+            <Link to="/students" className="btn-soft px-4 py-2">管理学生</Link>
+          </div>
+        </div>
+      </section>
 
       <div>
         <h2 className="text-lg font-semibold mb-4">快速开始</h2>
