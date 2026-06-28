@@ -1,7 +1,12 @@
 import { db } from "../db/schema";
-import { SpecProfile, SpecSegment } from "../types";
+import { SpecProfile, SpecSegment, StyleFeatures } from "../types";
 import { learnSpec } from "../ai/learn";
 import { getApiKey } from "./useSettings";
+
+const DEFAULT_SF: StyleFeatures = {
+  warmth: 3, formality: 3, conciseness: 3, encouragement: 3,
+  addressStyle: "", punctuation: "", sentencePattern: "",
+};
 
 export async function listProfiles(): Promise<SpecProfile[]> {
   return db.specProfiles.toArray();
@@ -23,7 +28,8 @@ export async function createProfile(subject: string, name: string): Promise<numb
   return db.specProfiles.add({
     subject, name, tone: "半书面", styleNote: "",
     segments: [{ title: "课堂内容", targetWords: 80, contentPoints: "", freeNote: "" }],
-    opening: "", ending: "", lockedFields: [], isBuiltin: false, createdAt: Date.now(),
+    opening: "", ending: "", styleFeatures: { ...DEFAULT_SF },
+    lockedFields: [], isBuiltin: false, createdAt: Date.now(),
   });
 }
 export async function toggleLock(id: number, fieldPath: string): Promise<void> {
@@ -56,6 +62,7 @@ export async function relearn(id: number): Promise<void> {
     styleNote: locked.has("styleNote") ? p.styleNote : learned.styleNote,
     opening: locked.has("opening") ? p.opening : learned.opening,
     ending: locked.has("ending") ? p.ending : learned.ending,
+    styleFeatures: locked.has("styleFeatures") ? p.styleFeatures : learned.styleFeatures,
     segments,
   });
 }

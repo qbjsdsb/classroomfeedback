@@ -1,25 +1,69 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import { vi } from "vitest";
+
+// mock callDeepSeek
+vi.mock("../../src/ai/client", () => ({
+  callDeepSeek: vi.fn(),
+}));
+
+import { callDeepSeek } from "../../src/ai/client";
 import { learnSpec } from "../../src/ai/learn";
 
-describe("learnSpec", () => {
-  it("parses learned profile structure", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: '{"tone":"正式书面","styleNote":"简洁","segments":[{"title":"课堂","targetWords":80,"contentPoints":"知识点","freeNote":""}],"opening":"该生今日","ending":"建议"}' } }], usage: { prompt_tokens: 100, completion_tokens: 50 } }),
-    } as any));
-    const out = await learnSpec({ apiKey: "k", samples: ["样本1"] });
-    expect(out.tone).toBe("正式书面");
-    expect(out.segments).toHaveLength(1);
-    expect(out.segments[0].targetWords).toBe(80);
+describe("learnSpec styleFeatures 解析", () => {
+  it("完整 styleFeatures 正确解析", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "正式书面", styleNote: "正式", segments: [],
+        opening: "开头", ending: "结尾",
+        styleFeatures: {
+          warmth: 4, formality: 5, conciseness: 2, encouragement: 3,
+          addressStyle: "XX家长您好", punctuation: "规范标点",
+          sentencePattern: "长短句结合",
+        },
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.styleFeatures.warmth).toBe(4);
+    expect(result.styleFeatures.formality).toBe(5);
+    expect(result.styleFeatures.addressStyle).toBe("XX家长您好");
   });
 
-  it("handles empty segments gracefully", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: '{"tone":"口语","styleNote":"","segments":[],"opening":"","ending":""}' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }),
-    } as any));
-    const out = await learnSpec({ apiKey: "k", samples: ["x"] });
-    expect(out.segments).toHaveLength(0);
-    expect(out.tone).toBe("口语");
+  it("styleFeatures 缺失时补默认值", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.styleFeatures.warmth).toBe(3);
+    expect(result.styleFeatures.formality).toBe(3);
+    expect(result.styleFeatures.addressStyle).toBe("");
+  });
+
+  it("数值超范围 clamp 到 1-5", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+        styleFeatures: { warmth: 10, formality: 0, conciseness: 3, encouragement: 3 },
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.styleFeatures.warmth).toBe(5);
+    expect(result.styleFeatures.formality).toBe(1);
+  });
+
+  it("非数值字符串解析为数字", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+        styleFeatures: { warmth: "4", formality: "3", conciseness: 3, encouragement: 3 },
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.styleFeatures.warmth).toBe(4);
+    expect(result.styleFeatures.formality).toBe(3);
   });
 });

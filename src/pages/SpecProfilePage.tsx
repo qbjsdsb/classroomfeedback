@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SpecProfile, Tone } from "../types";
+import { SpecProfile, StyleFeatures, Tone } from "../types";
 import { listProfiles, updateProfile, toggleLock, relearn, createProfile } from "../hooks/useSpecProfiles";
 import { listSamples, addSample } from "../hooks/useHistorySamples";
 import { countDiffs, runAnalyze, applySuggestion, rejectSuggestion, applyAndLock } from "../hooks/useSuggestions";
@@ -7,6 +7,11 @@ import { EditSuggestion } from "../ai/analyzeEdits";
 import { db } from "../db/schema";
 import { useNotify } from "../hooks/useNotify";
 import { Select } from "../components/Select";
+
+const DEFAULT_SF: StyleFeatures = {
+  warmth: 3, formality: 3, conciseness: 3, encouragement: 3,
+  addressStyle: "", punctuation: "", sentencePattern: "",
+};
 
 export default function SpecProfilePage() {
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
@@ -17,6 +22,7 @@ export default function SpecProfilePage() {
   const [suggestions, setSuggestions] = useState<(EditSuggestion & { id?: number })[]>([]);
   const notify = useNotify();
   const cur = profiles.find(p => p.id === curId) ?? null;
+  const sf = cur?.styleFeatures ?? DEFAULT_SF;
 
   const reload = async () => { setProfiles(await listProfiles()); };
   useEffect(() => { reload(); }, []);
@@ -114,6 +120,40 @@ export default function SpecProfilePage() {
             <label className="label">风格说明</label>
             <textarea className="input" value={cur.styleNote}
               onChange={e => { patch(cur.id!, { styleNote: e.target.value }); }} />
+          </div>
+          <div className="card space-y-4">
+            <h2 className="section-title">风格特征</h2>
+            <p className="hint">learn 时自动归纳，也可手动微调。生成时作为强约束。</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="form-field">
+                <label className="label">温暖度：<b className="text-primary">{sf.warmth}/5</b> {["", "冷静客观", "平和", "适中", "温暖", "非常温暖亲切"][sf.warmth]}</label>
+                <input type="range" min={1} max={5} step={1} value={sf.warmth} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, warmth: Number(e.target.value) } })} className="w-full accent-primary" />
+              </div>
+              <div className="form-field">
+                <label className="label">正式度：<b className="text-primary">{sf.formality}/5</b> {["", "口语化", "半口语", "适中", "正式", "非常正式书面"][sf.formality]}</label>
+                <input type="range" min={1} max={5} step={1} value={sf.formality} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, formality: Number(e.target.value) } })} className="w-full accent-primary" />
+              </div>
+              <div className="form-field">
+                <label className="label">简洁度：<b className="text-primary">{sf.conciseness}/5</b> {["", "极简", "简洁", "适中", "详细", "非常详细展开"][sf.conciseness]}</label>
+                <input type="range" min={1} max={5} step={1} value={sf.conciseness} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, conciseness: Number(e.target.value) } })} className="w-full accent-primary" />
+              </div>
+              <div className="form-field">
+                <label className="label">鼓励倾向：<b className="text-primary">{sf.encouragement}/5</b> {["", "少鼓励", "偶尔鼓励", "适中", "多鼓励", "充满鼓励肯定"][sf.encouragement]}</label>
+                <input type="range" min={1} max={5} step={1} value={sf.encouragement} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, encouragement: Number(e.target.value) } })} className="w-full accent-primary" />
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="label">称呼方式</label>
+              <input className="input" placeholder="如：XX妈妈您好 / 亲爱的XX家长" value={sf.addressStyle} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, addressStyle: e.target.value } })} />
+            </div>
+            <div className="form-field">
+              <label className="label">标点偏好</label>
+              <input className="input" placeholder="如：规范标点，多用句号 / 口语化，多用感叹号" value={sf.punctuation} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, punctuation: e.target.value } })} />
+            </div>
+            <div className="form-field">
+              <label className="label">句式偏好</label>
+              <input className="input" placeholder="如：长短句结合 / 多用短句 / 多用排比" value={sf.sentencePattern} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, sentencePattern: e.target.value } })} />
+            </div>
           </div>
           <div>
             <span className="text-sm">段落（可编辑）</span>

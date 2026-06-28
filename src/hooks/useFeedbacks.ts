@@ -31,3 +31,18 @@ export async function exportAsTxt(feedbacks: Feedback[], students: Student[]): P
   const nameOf = (id: number) => students.find(s => s.id === id)?.name ?? "未知";
   return feedbacks.map(f => `【${nameOf(f.studentId)}】(${new Date(f.createdAt).toLocaleDateString()})\n${f.finalText}`).join("\n\n");
 }
+
+/** 取该学生 + 同科目规范档的历史反馈（用于 few-shot 检索池） */
+export async function listFeedbacksForFewShot(
+  studentId: number,
+  specProfileId: number
+): Promise<Feedback[]> {
+  // 1. 该学生的所有反馈
+  const own = await db.feedbacks.where("studentId").equals(studentId).toArray();
+  // 2. 同规范档的其他学生反馈（补充池）
+  const sameSpec = await db.feedbacks.where("specProfileId").equals(specProfileId).toArray();
+  // 合并去重（按 id）
+  const map = new Map<number, Feedback>();
+  [...own, ...sameSpec].forEach(f => { if (f.id !== undefined) map.set(f.id, f); });
+  return Array.from(map.values()).sort((a, b) => a.createdAt - b.createdAt);
+}

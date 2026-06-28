@@ -9,7 +9,9 @@ const profile: SpecProfile = {
     { title: "学生表现", targetWords: 100, contentPoints: "专注度", freeNote: "" },
     { title: "家庭建议", targetWords: 60, contentPoints: "练习", freeNote: "" },
   ],
-  opening: "该生今日", ending: "望配合", lockedFields: [], isBuiltin: false, createdAt: 0,
+  opening: "该生今日", ending: "望配合",
+  styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+  lockedFields: [], isBuiltin: false, createdAt: 0,
 };
 const student: Student = { name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: 0 };
 

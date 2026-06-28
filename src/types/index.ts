@@ -9,6 +9,16 @@ export interface SpecSegment {
   freeNote: string;
 }
 
+export interface StyleFeatures {
+  warmth: number;          // 1-5 温暖度
+  formality: number;       // 1-5 正式度
+  conciseness: number;     // 1-5 简洁度
+  encouragement: number;   // 1-5 鼓励倾向
+  addressStyle: string;    // 称呼方式
+  punctuation: string;     // 标点偏好
+  sentencePattern: string; // 句式偏好
+}
+
 export interface SpecProfile {
   id?: number;
   subject: string;
@@ -18,6 +28,7 @@ export interface SpecProfile {
   segments: SpecSegment[];
   opening: string;
   ending: string;
+  styleFeatures: StyleFeatures;
   lockedFields: string[];
   isBuiltin: boolean;
   createdAt: number;

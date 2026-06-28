@@ -34,6 +34,24 @@ export class FeedbackDB extends Dexie {
         if (s.defaultSubject === undefined) s.defaultSubject = "";
       });
     });
+    this.version(3).stores({
+      students: "++id, name, createdAt",
+      specProfiles: "++id, subject, isBuiltin",
+      historySamples: "++id, specProfileId",
+      feedbacks: "++id, studentId, specProfileId, createdAt",
+      tokenUsage: "++id, callType, timestamp",
+      settings: "++id",
+      suggestions: "++id, specProfileId, status, createdAt",
+    }).upgrade((trans) => {
+      return trans.table("specProfiles").toCollection().modify((p: any) => {
+        if (!p.styleFeatures) {
+          p.styleFeatures = {
+            warmth: 3, formality: 3, conciseness: 3, encouragement: 3,
+            addressStyle: "", punctuation: "", sentencePattern: "",
+          };
+        }
+      });
+    });
   }
 }
 

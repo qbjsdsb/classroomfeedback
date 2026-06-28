@@ -19,7 +19,9 @@ describe("db schema", () => {
   it("stores a spec profile", async () => {
     const id = await db.specProfiles.add({
       subject: "数学", name: "p", tone: "正式书面", styleNote: "",
-      segments: [], opening: "", ending: "", lockedFields: [], isBuiltin: false, createdAt: Date.now()
+      segments: [], opening: "", ending: "",
+      styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+      lockedFields: [], isBuiltin: false, createdAt: Date.now()
     });
     expect(id).toBeGreaterThan(0);
   });
@@ -27,7 +29,9 @@ describe("db schema", () => {
   it("stores a feedback referencing student and profile", async () => {
     const sid = await db.specProfiles.add({
       subject: "数学", name: "p", tone: "正式书面", styleNote: "",
-      segments: [], opening: "", ending: "", lockedFields: [], isBuiltin: false, createdAt: Date.now()
+      segments: [], opening: "", ending: "",
+      styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+      lockedFields: [], isBuiltin: false, createdAt: Date.now()
     });
     const stid = await db.students.add({
       name: "李四", grade: "高一", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: Date.now()

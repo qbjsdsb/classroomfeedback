@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Student, SpecProfile } from "../types";
 import { listStudents } from "../hooks/useStudents";
 import { listProfiles, listProfilesBySubject } from "../hooks/useSpecProfiles";
-import { listFeedbacksByStudent, saveFeedback } from "../hooks/useFeedbacks";
+import { listFeedbacksForFewShot, saveFeedback } from "../hooks/useFeedbacks";
 import { useRecording } from "../hooks/useRecording";
 import { isDesktop } from "../lib/device";
 import { correctText } from "../ai/correct";
@@ -80,7 +80,7 @@ export default function GeneratePage() {
     setGenerating(true); setPreview("");
     const tid = notify.info("生成中…", { duration: 0 });
     try {
-      const history = student.id ? await listFeedbacksByStudent(student.id) : [];
+      const history = student.id && profile.id ? await listFeedbacksForFewShot(student.id, profile.id) : [];
       const out = await generateFeedback({ apiKey, profile, student, courseContent: text, history, includedSegments });
       setPreview(out.feedback); setEditing(out.feedback);
       notify.dismiss(tid);

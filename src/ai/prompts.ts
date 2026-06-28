@@ -19,28 +19,60 @@ export function generatePrompt(
   const segDesc = includedSegments.map((s, i) =>
     `第${i + 1}段「${s.title}」约${s.targetWords}字，要点：${s.contentPoints}${s.freeNote ? "；补充：" + s.freeNote : ""}`
   ).join("\n");
-  const histTxt = history.slice(-2).map((h, i) => `历史反馈${i + 1}：${h.finalText}`).join("\n\n") || "（无历史反馈）";
+
+  // few-shot：取 history 中 includeInLearning=true 的，最多 5 条
+  const fewShot = history.filter(h => h.includeInLearning && h.finalText).slice(-5);
+  const fewShotTxt = fewShot.length > 0
+    ? fewShot.map((h, i) => `### 示例 ${i + 1}\n课程内容：${h.courseContent || "（未记录）"}\n反馈：${h.finalText}`).join("\n\n")
+    : "";
+
+  // 风格特征强约束
+  const sf = profile.styleFeatures;
+  const warmthDesc = ["", "冷静客观", "平和", "适中", "温暖", "非常温暖亲切"][sf.warmth] || "适中";
+  const formalityDesc = ["", "口语化", "半口语", "适中", "正式", "非常正式书面"][sf.formality] || "适中";
+  const concisenessDesc = ["", "极简", "简洁", "适中", "详细", "非常详细展开"][sf.conciseness] || "适中";
+  const encouragementDesc = ["", "少鼓励", "偶尔鼓励", "适中", "多鼓励", "充满鼓励肯定"][sf.encouragement] || "适中";
+  const sfTxt = `## 风格特征（必须严格遵守）
+- 温暖度：${sf.warmth}/5（${warmthDesc}）
+- 正式度：${sf.formality}/5（${formalityDesc}）
+- 简洁度：${sf.conciseness}/5（${concisenessDesc}）
+- 鼓励倾向：${sf.encouragement}/5（${encouragementDesc}）
+${sf.addressStyle ? `- 称呼方式：${sf.addressStyle}\n` : ""}${sf.punctuation ? `- 标点偏好：${sf.punctuation}\n` : ""}${sf.sentencePattern ? `- 句式偏好：${sf.sentencePattern}` : ""}`;
+
   const system = `你是教培课后反馈撰写助手。严格按以下规范档撰写反馈。
 语气：${profile.tone}；风格说明：${profile.styleNote}
 段落结构：
 ${segDesc}
 开头：${profile.opening}
 结尾：${profile.ending}
+
+${sfTxt}
+${fewShotTxt ? `\n## 参考示例（请模仿其风格、语气、长度、结构）\n${fewShotTxt}` : ""}
 ${JSON_INSTRUCTION}
 输出 JSON 格式：{"feedback":"整篇反馈正文"}`;
   const user = `学生姓名：${student.name}；年级：${student.grade}；性格：${student.personality}；薄弱点：${student.weaknesses}；家长关注：${student.parentFocus}
 科目：${profile.subject}
-本节课内容（老师口述/输入）：${courseContent}
-${histTxt}`;
+本节课内容（老师口述/输入）：${courseContent}`;
   return [{ role: "system", content: system }, { role: "user", content: user }];
 }
 
 export function learnPrompt(samples: string[]) {
   const txt = samples.map((s, i) => `--- 样本${i + 1} ---\n${s}`).join("\n\n");
-  const system = `你是反馈格式分析助手。分析以下历史反馈样本，归纳出统一的格式规范。
+  const system = `你是反馈格式分析助手。分析以下历史反馈样本，归纳出统一的格式规范和风格特征。
 ${JSON_INSTRUCTION}
 输出 JSON 格式：
-{"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充"}],"opening":"常用开头","ending":"常用结尾"}`;
+{"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充"}],"opening":"常用开头","ending":"常用结尾","styleFeatures":{"warmth":1-5,"formality":1-5,"conciseness":1-5,"encouragement":1-5,"addressStyle":"称呼方式","punctuation":"标点偏好","sentencePattern":"句式偏好"}}
+
+风格特征评分标准：
+- warmth（温暖度）：1=冷静客观，3=适中，5=非常温暖亲切
+- formality（正式度）：1=口语化，3=适中，5=非常正式书面
+- conciseness（简洁度）：1=极简，3=适中，5=非常详细展开
+- encouragement（鼓励倾向）：1=少鼓励，3=适中，5=充满鼓励肯定
+- addressStyle：如 "XX妈妈您好"
+- punctuation：如 "规范标点，多用句号" 或 "口语化，多用感叹号"
+- sentencePattern：如 "长短句结合" 或 "多用短句"
+
+styleFeatures 必须填写完整，数值字段必须是 1-5 的整数。`;
   return [{ role: "system", content: system }, { role: "user", content: txt }];
 }
 
