@@ -37,10 +37,21 @@ ${histTxt}`;
 
 export function learnPrompt(samples: string[]) {
   const txt = samples.map((s, i) => `--- 样本${i + 1} ---\n${s}`).join("\n\n");
-  const system = `你是反馈格式分析助手。分析以下历史反馈样本，归纳出统一的格式规范。
+  const system = `你是反馈格式分析助手。分析以下历史反馈样本，归纳出统一的格式规范和风格特征。
 ${JSON_INSTRUCTION}
 输出 JSON 格式：
-{"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充"}],"opening":"常用开头","ending":"常用结尾"}`;
+{"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充"}],"opening":"常用开头","ending":"常用结尾","styleFeatures":{"warmth":1-5,"formality":1-5,"conciseness":1-5,"encouragement":1-5,"addressStyle":"称呼方式","punctuation":"标点偏好","sentencePattern":"句式偏好"}}
+
+风格特征评分标准：
+- warmth（温暖度）：1=冷静客观，3=适中，5=非常温暖亲切
+- formality（正式度）：1=口语化，3=适中，5=非常正式书面
+- conciseness（简洁度）：1=极简，3=适中，5=非常详细展开
+- encouragement（鼓励倾向）：1=少鼓励，3=适中，5=充满鼓励肯定
+- addressStyle：如 "XX妈妈您好"
+- punctuation：如 "规范标点，多用句号" 或 "口语化，多用感叹号"
+- sentencePattern：如 "长短句结合" 或 "多用短句"
+
+styleFeatures 必须填写完整，数值字段必须是 1-5 的整数。`;
   return [{ role: "system", content: system }, { role: "user", content: txt }];
 }
 

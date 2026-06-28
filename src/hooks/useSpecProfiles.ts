@@ -62,6 +62,7 @@ export async function relearn(id: number): Promise<void> {
     styleNote: locked.has("styleNote") ? p.styleNote : learned.styleNote,
     opening: locked.has("opening") ? p.opening : learned.opening,
     ending: locked.has("ending") ? p.ending : learned.ending,
+    styleFeatures: locked.has("styleFeatures") ? p.styleFeatures : learned.styleFeatures,
     segments,
   });
 }
