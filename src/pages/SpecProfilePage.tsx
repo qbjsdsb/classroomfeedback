@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SpecProfile, StyleFeatures, Tone } from "../types";
+import { SpecProfile, SegmentFormat, StyleFeatures, Tone } from "../types";
 import { listProfiles, updateProfile, toggleLock, relearn, createProfile } from "../hooks/useSpecProfiles";
 import { listSamples, addSample } from "../hooks/useHistorySamples";
 import { countDiffs, runAnalyze, applySuggestion, rejectSuggestion, applyAndLock } from "../hooks/useSuggestions";
@@ -172,6 +172,13 @@ export default function SpecProfilePage() {
                   onChange={e => { const segs = [...cur.segments]; segs[i] = { ...s, contentPoints: e.target.value }; patch(cur.id!, { segments: segs }); }} />
                 <input className="input py-1" placeholder="段落自由说明" value={s.freeNote}
                   onChange={e => { const segs = [...cur.segments]; segs[i] = { ...s, freeNote: e.target.value }; patch(cur.id!, { segments: segs }); }} />
+                <select className="input py-1" value={s.format}
+                  onChange={e => { const segs = [...cur.segments]; segs[i] = { ...s, format: e.target.value as SegmentFormat }; patch(cur.id!, { segments: segs }); }}
+                  title="段落标题显示方式">
+                  <option value="none">无标题（纯正文）</option>
+                  <option value="title">标题（【标题】正文）</option>
+                  <option value="number">序号（1. 正文）</option>
+                </select>
               </div>
             ))}
             <button
