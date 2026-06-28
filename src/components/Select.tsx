@@ -22,7 +22,7 @@ export function Select<T extends string | number>({
 }) {
   const current = options.find(o => o.value === value);
   return (
-    <Listbox value={value} onChange={onChange}>
+    <Listbox value={value ?? undefined} onChange={onChange}>
       <ListboxButton className={clsx("input flex items-center justify-between text-left", className)}>
         <span className={current ? "text-text" : "text-text-muted"}>
           {current?.label ?? placeholder ?? "请选择…"}
