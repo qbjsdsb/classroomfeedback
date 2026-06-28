@@ -5,9 +5,9 @@ import { SpecProfile, Student } from "../../src/types";
 const profile: SpecProfile = {
   subject: "数学", name: "p", tone: "正式书面", styleNote: "s",
   segments: [
-    { title: "课堂内容", targetWords: 80, contentPoints: "知识点", freeNote: "" },
-    { title: "学生表现", targetWords: 100, contentPoints: "专注度", freeNote: "" },
-    { title: "家庭建议", targetWords: 60, contentPoints: "练习", freeNote: "" },
+    { title: "课堂内容", targetWords: 80, contentPoints: "知识点", freeNote: "", format: "none" },
+    { title: "学生表现", targetWords: 100, contentPoints: "专注度", freeNote: "", format: "none" },
+    { title: "家庭建议", targetWords: 60, contentPoints: "练习", freeNote: "", format: "none" },
   ],
   opening: "该生今日", ending: "望配合",
   styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
