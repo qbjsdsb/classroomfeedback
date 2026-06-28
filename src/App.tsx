@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, NavLink } from "react-router-dom";
 import { clsx } from "clsx";
-import { Sun, Moon, BookOpen, Users, FileText, Sparkles, Layers, BarChart3, Settings } from "lucide-react";
+import { Sun, Moon, Menu, X } from "lucide-react";
 import { seedBuiltinProfiles } from "./db/seed";
 import { db } from "./db/schema";
 import { getLastBackupAt } from "./hooks/useSettings";
@@ -9,6 +9,7 @@ import { NotificationProvider } from "./components/NotificationProvider";
 import { useNotify } from "./hooks/useNotify";
 import { Skeleton } from "./components/Skeleton";
 import { useTheme } from "./hooks/useTheme";
+import { NAV_ITEMS } from "./data/nav";
 import HomePage from "./pages/HomePage";
 import StudentsPage from "./pages/StudentsPage";
 import SpecProfilePage from "./pages/SpecProfilePage";
@@ -17,16 +18,6 @@ import BatchGeneratePage from "./pages/BatchGeneratePage";
 import StatsPage from "./pages/StatsPage";
 import SettingsPage from "./pages/SettingsPage";
 import StudentDetailPage from "./pages/StudentDetailPage";
-
-const NAV: { to: string; label: string; icon: typeof BookOpen; end?: boolean }[] = [
-  { to: "/", label: "首页", icon: BookOpen, end: true },
-  { to: "/students", label: "学生", icon: Users },
-  { to: "/spec", label: "规范档", icon: FileText },
-  { to: "/generate", label: "生成反馈", icon: Sparkles },
-  { to: "/batch", label: "批量生成", icon: Layers },
-  { to: "/stats", label: "统计", icon: BarChart3 },
-  { to: "/settings", label: "设置", icon: Settings },
-];
 
 function BackupReminder() {
   const notify = useNotify();
@@ -60,6 +51,7 @@ function ThemeToggle() {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => { (async () => { await seedBuiltinProfiles(); setReady(true); })(); }, []);
   return (
     <NotificationProvider>
@@ -68,31 +60,61 @@ export default function App() {
       ) : (
         <div className="min-h-screen bg-bg">
           <BackupReminder />
-          <nav className="sticky top-0 z-10 bg-surface/90 backdrop-blur border-b border-border">
-            <div className="max-w-content mx-auto px-4 flex items-center gap-2 h-14">
-              <NavLink to="/" className="flex items-center gap-2 mr-2 font-bold text-text shrink-0">
-                <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="w-7 h-7" />
-                <span className="hidden sm:inline">ClassFlow · 课后反馈</span>
-              </NavLink>
-              <div className="flex items-center gap-1 overflow-x-auto flex-1">
-                {NAV.map(n => (
-                  <NavLink
-                    key={n.to}
-                    to={n.to}
-                    end={n.end}
-                    className={({ isActive }) =>
-                      clsx("nav-link whitespace-nowrap", isActive ? "nav-link-active" : "nav-link-inactive")
-                    }
+          <header className="border-b border-border bg-surface/80 backdrop-blur sticky top-0 z-40">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="h-14 flex items-center justify-between gap-4">
+                <NavLink to="/" className="flex items-center gap-2 font-bold text-text shrink-0">
+                  <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="w-7 h-7" />
+                  <span className="hidden sm:inline">ClassFlow · 课后反馈</span>
+                </NavLink>
+                <nav className="hidden sm:flex items-center gap-1">
+                  {NAV_ITEMS.map(item => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      className={({ isActive }) =>
+                        clsx("nav-link whitespace-nowrap", isActive ? "nav-link-active" : "nav-link-inactive")
+                      }
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  ))}
+                </nav>
+                <div className="flex items-center gap-1">
+                  <ThemeToggle />
+                  <button
+                    onClick={() => setMobileOpen(!mobileOpen)}
+                    className="sm:hidden btn-ghost p-2"
+                    aria-label="菜单"
+                    aria-expanded={mobileOpen}
                   >
-                    <n.icon className="w-4 h-4" />
-                    <span>{n.label}</span>
-                  </NavLink>
-                ))}
+                    {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <ThemeToggle />
+              {mobileOpen && (
+                <nav className="sm:hidden pb-3 flex flex-col gap-1">
+                  {NAV_ITEMS.map(item => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      onClick={() => setMobileOpen(false)}
+                      className={({ isActive }) =>
+                        clsx("nav-link", isActive ? "nav-link-active" : "nav-link-inactive")
+                      }
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  ))}
+                </nav>
+              )}
             </div>
-          </nav>
-          <main className="max-w-content mx-auto p-4 sm:p-6">
+          </header>
+          <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/students" element={<StudentsPage />} />
