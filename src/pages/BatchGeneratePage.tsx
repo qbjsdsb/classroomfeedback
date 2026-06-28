@@ -11,6 +11,7 @@ import { splitCourseContent } from "../ai/split";
 import { generateFeedback } from "../ai/generate";
 import { getApiKey } from "../hooks/useSettings";
 import { useNotify } from "../hooks/useNotify";
+import { Select } from "../components/Select";
 
 type Step = "input" | "splitConfirm" | "result";
 interface PerStudent {
@@ -160,7 +161,9 @@ export default function BatchGeneratePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">批量生成反馈</h1>
+      <div className="page-header">
+        <h1 className="text-xl font-bold">批量生成反馈</h1>
+      </div>
 
       {step === "input" && (
         <div className="space-y-3">
@@ -168,29 +171,31 @@ export default function BatchGeneratePage() {
             <span className="text-sm font-semibold">选学生（可多选）</span>
             <div className="flex flex-wrap gap-2 mt-1">
               {students.map(s => (
-                <label key={s.id} className={`border rounded px-2 py-1 text-sm cursor-pointer ${selectedStudentIds.includes(s.id!) ? "bg-blue-100 border-blue-400" : ""}`}>
+                <label key={s.id} className={`border rounded px-2 py-1 text-sm cursor-pointer card-hover ${selectedStudentIds.includes(s.id!) ? "bg-primary-surface border-primary/40" : "border-border"}`}>
                   <input type="checkbox" className="mr-1" checked={selectedStudentIds.includes(s.id!)} onChange={() => toggleStudent(s.id!)} />
                   {s.name}
                 </label>
               ))}
-              {students.length > 5 && <span className="text-xs text-gray-500 self-center">超过5个会较慢，建议分批</span>}
+              {students.length > 5 && <span className="text-xs text-text-muted self-center">超过5个会较慢，建议分批</span>}
             </div>
           </div>
-          <div>
+          <div className="form-field">
             <label className="label">规范档</label>
-            <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="input">
-              <option value="">选择规范档…</option>
-              {profiles.map(p => <option key={p.id} value={p.id}>{p.name}（{p.subject}）</option>)}
-            </select>
+            <Select
+              value={profileId}
+              options={profiles.filter(p => p.id != null).map(p => ({ value: p.id!, label: `${p.name}（${p.subject}）` }))}
+              placeholder="选择规范档…"
+              onChange={(v) => setProfileId(v)}
+            />
           </div>
           <div className="flex gap-2 flex-wrap">
             {isDesktop() && supported && (
-              <button onClick={recording ? stop : start} className={`text-xs px-2 py-1 rounded ${recording ? "bg-red-500 text-white" : "bg-blue-100"}`}>
+              <button onClick={recording ? stop : start} className={`text-xs px-2 py-1 rounded ${recording ? "bg-red-500 text-white" : "bg-primary-surface"}`}>
                 {recording ? "停止录音" : "开始录音"}
               </button>
             )}
           </div>
-          {recording && interim && <p className="text-xs text-gray-500">实时：{interim}</p>}
+          {recording && interim && <p className="text-xs text-text-muted">实时：{interim}</p>}
           <textarea className="input h-40" placeholder="点名口述整节课：张三今天…；李四今天…" value={text} onChange={e => setText(e.target.value)} />
           <div className="flex gap-2">
             <button onClick={doCorrect} disabled={busy || !text} className="btn-soft">{busy ? "处理中…" : "AI 纠错"}</button>
@@ -211,7 +216,7 @@ export default function BatchGeneratePage() {
             </div>
           ))}
           <div className="flex gap-2">
-            <button onClick={() => setStep("input")} className="text-sm text-gray-600 hover:text-gray-800">返回修改</button>
+            <button onClick={() => setStep("input")} className="text-sm text-text-muted hover:text-text">返回修改</button>
             <button onClick={doBatchGenerate} disabled={busy} className="btn-primary">
               {busy ? `正在生成…（${perStudent.filter(p => p.status === "done" || p.status === "error").length}/${perStudent.length}）` : "批量生成"}
             </button>
@@ -226,7 +231,7 @@ export default function BatchGeneratePage() {
             <div key={ps.student.id} className="card space-y-1">
               <div className="flex justify-between items-center">
                 <p className="font-semibold">{ps.student.name}</p>
-                <span className={`text-xs ${ps.status === "done" ? "text-green-600" : ps.status === "error" ? "text-red-600" : "text-gray-500"}`}>
+                <span className={`text-xs ${ps.status === "done" ? "text-green-600" : ps.status === "error" ? "text-red-600" : "text-text-muted"}`}>
                   {ps.status === "done" ? "已生成" : ps.status === "error" ? "失败" : "待生成"}
                 </span>
               </div>
@@ -243,7 +248,7 @@ export default function BatchGeneratePage() {
             </div>
           ))}
           <div className="flex gap-2">
-            <button onClick={() => setStep("splitConfirm")} className="text-sm text-gray-600 hover:text-gray-800">返回拆分确认</button>
+            <button onClick={() => setStep("splitConfirm")} className="text-sm text-text-muted hover:text-text">返回拆分确认</button>
             <button onClick={saveAll} className="btn-success">批量保存（仅保存已生成的）</button>
           </div>
         </div>

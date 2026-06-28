@@ -52,17 +52,19 @@ export default function StudentDetailPage() {
     await reload();
   };
 
-  if (!student) return <div className="text-gray-500">未找到学生</div>;
+  if (!student) return <div className="text-text-muted">未找到学生</div>;
   return (
     <div className="space-y-3">
-      <Link to="/students" className="inline-block text-sm text-blue-600 hover:underline mb-1">← 返回学生列表</Link>
-      <h1 className="text-xl font-bold">{student.name} 的历史反馈</h1>
+      <div className="page-header">
+        <h1 className="text-xl font-bold">{student.name} 的历史反馈</h1>
+        <Link to="/students" className="btn-ghost">← 返回学生列表</Link>
+      </div>
       {list.length === 0 && (
         <EmptyState title="暂无历史反馈" hint="为该学生生成第一条反馈" action={<Link to="/generate" className="btn-primary">去生成</Link>} />
       )}
       {list.map(f => (
         <div key={f.id} className="card space-y-1">
-          <p className="text-xs text-gray-500">{new Date(f.createdAt).toLocaleString()} · {f.subject}</p>
+          <p className="text-xs text-text-muted">{new Date(f.createdAt).toLocaleString()} · {f.subject}</p>
           {editId === f.id ? (
             <>
               <textarea className="input h-32" value={editText} onChange={e => setEditText(e.target.value)} />
@@ -84,24 +86,24 @@ export default function StudentDetailPage() {
       ))}
       {student && (
         <div className="card space-y-2">
-          <h2 className="font-semibold">AI 提炼学生特征</h2>
-          <button onClick={doExtract} className="btn-purple">从反馈提炼特征</button>
+          <h2 className="section-title">AI 提炼学生特征</h2>
+          <button onClick={doExtract} className="btn-primary">从反馈提炼特征</button>
           {proposal && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-500">基于 {proposal.sourceFeedbackCount} 条反馈提炼</p>
+              <p className="text-xs text-text-muted">基于 {proposal.sourceFeedbackCount} 条反馈提炼</p>
               {([
                 ["weaknesses", "薄弱点", proposal.weaknessesProposal],
                 ["personality", "性格特点", proposal.personalityProposal],
                 ["parentFocus", "家长关注", proposal.parentFocusProposal],
               ] as const).map(([field, label, text]) => text ? (
-                <div key={field} className="border border-purple-200 rounded-md p-2 bg-purple-50 space-y-1">
+                <div key={field} className="card-accent p-2 space-y-1">
                   <p className="text-xs font-semibold">{label}提议</p>
                   <p className="text-sm">{text}</p>
-                  <p className="text-xs text-gray-500">当前：{student[field] || "（空）"}</p>
+                  <p className="text-xs text-text-muted">当前：{student[field] || "（空）"}</p>
                   <div className="flex gap-2 text-xs">
                     <button onClick={() => applyProposal(field, "append")} className="text-green-600 hover:bg-green-50">采纳追加</button>
-                    <button onClick={() => applyProposal(field, "replace")} className="text-blue-600 hover:bg-blue-50">替换</button>
-                    <button onClick={() => setProposal({ ...proposal, [field === "weaknesses" ? "weaknessesProposal" : field === "personality" ? "personalityProposal" : "parentFocusProposal"]: "" })} className="text-gray-600 hover:bg-gray-100">忽略</button>
+                    <button onClick={() => applyProposal(field, "replace")} className="text-primary hover:bg-primary-surface">替换</button>
+                    <button onClick={() => setProposal({ ...proposal, [field === "weaknesses" ? "weaknessesProposal" : field === "personality" ? "personalityProposal" : "parentFocusProposal"]: "" })} className="text-text-muted hover:bg-surface-2">忽略</button>
                   </div>
                 </div>
               ) : null)}

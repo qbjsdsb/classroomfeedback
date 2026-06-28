@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { SpecProfile } from "../types";
+import { SpecProfile, Tone } from "../types";
 import { listProfiles, updateProfile, toggleLock, relearn, createProfile } from "../hooks/useSpecProfiles";
 import { listSamples, addSample } from "../hooks/useHistorySamples";
 import { countDiffs, runAnalyze, applySuggestion, rejectSuggestion, applyAndLock } from "../hooks/useSuggestions";
 import { EditSuggestion } from "../ai/analyzeEdits";
 import { db } from "../db/schema";
 import { useNotify } from "../hooks/useNotify";
+import { Select } from "../components/Select";
 
 export default function SpecProfilePage() {
   const [profiles, setProfiles] = useState<SpecProfile[]>([]);
@@ -74,49 +75,50 @@ export default function SpecProfilePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="page-header">
         <h1 className="text-xl font-bold">规范档</h1>
-        <button onClick={doCreate} className="btn-ghost">+ 新建</button>
+        <button onClick={doCreate} className="btn-primary">+ 新建</button>
       </div>
-      <select value={curId ?? ""} onChange={e => setCurId(Number(e.target.value))} className="input">
-        <option value="">选择规范档…</option>
-        {Object.entries(
-          profiles.reduce((acc: Record<string, SpecProfile[]>, p) => {
-            (acc[p.subject] = acc[p.subject] || []).push(p); return acc;
-          }, {})
-        ).map(([subj, list]) => (
-          <optgroup key={subj} label={subj}>
-            {list.map(p => <option key={p.id} value={p.id}>{p.name}{p.isBuiltin ? "（内置）" : ""}</option>)}
-          </optgroup>
-        ))}
-      </select>
+      <Select
+        value={curId}
+        options={profiles.filter(p => p.id != null).map(p => ({ value: p.id!, label: `${p.name}${p.isBuiltin ? "（内置）" : ""}（${p.subject}）` }))}
+        placeholder="选择规范档…"
+        onChange={(v) => setCurId(v)}
+      />
 
       {cur && (
         <div className="card space-y-3">
-          <label className="block"><span className="label">名称</span>
+          <div className="form-field">
+            <label className="label">名称</label>
             <input className="input" value={cur.name}
               onChange={e => { patch(cur.id!, { name: e.target.value }); }} />
-          </label>
+          </div>
           <div className="block">
             <span className="text-sm">语气</span>
             <div className="flex gap-2 items-center">
-              <select className="input" value={cur.tone}
-                onChange={e => { patch(cur.id!, { tone: e.target.value as any }); }}>
-                <option>正式书面</option><option>半书面</option><option>口语</option>
-              </select>
+              <Select
+                value={cur.tone}
+                options={[
+                  { value: "正式书面" as Tone, label: "正式书面" },
+                  { value: "半书面" as Tone, label: "半书面" },
+                  { value: "口语" as Tone, label: "口语" },
+                ]}
+                onChange={(v) => { patch(cur.id!, { tone: v }); }}
+              />
               <button onClick={() => { patchLocal(cur.id!, { lockedFields: toggleLockedArray(cur.lockedFields, "tone") }); toggleLock(cur.id!, "tone"); }} className="text-xs whitespace-nowrap">
                 {cur.lockedFields.includes("tone") ? "🔒已锁" : "🔓锁定"}
               </button>
             </div>
           </div>
-          <label className="block"><span className="label">风格说明</span>
+          <div className="form-field">
+            <label className="label">风格说明</label>
             <textarea className="input" value={cur.styleNote}
               onChange={e => { patch(cur.id!, { styleNote: e.target.value }); }} />
-          </label>
+          </div>
           <div>
             <span className="text-sm">段落（可编辑）</span>
             {cur.segments.map((s, i) => (
-              <div key={i} className="card p-2 mt-1 space-y-1 relative">
+              <div key={i} className="card-accent p-2 mt-1 space-y-1 relative">
                 <button
                   onClick={() => { const segs = cur.segments.filter((_, j) => j !== i); patch(cur.id!, { segments: segs }); }}
                   className="absolute top-1 right-1 text-xs text-red-500 hover:bg-red-50 rounded px-1.5 py-0.5"
@@ -137,20 +139,22 @@ export default function SpecProfilePage() {
               className="btn-soft mt-1 w-full"
             >+ 添加段落</button>
           </div>
-          <label className="block"><span className="label">开头</span>
+          <div className="form-field">
+            <label className="label">开头</label>
             <input className="input" value={cur.opening}
               onChange={e => { patch(cur.id!, { opening: e.target.value }); }} />
-          </label>
-          <label className="block"><span className="label">结尾</span>
+          </div>
+          <div className="form-field">
+            <label className="label">结尾</label>
             <input className="input" value={cur.ending}
               onChange={e => { patch(cur.id!, { ending: e.target.value }); }} />
-          </label>
+          </div>
         </div>
       )}
 
       {cur && !cur.isBuiltin && (
         <div className="card space-y-2">
-          <h2 className="font-semibold">历史反馈样本（{samples.length}）</h2>
+          <h2 className="section-title">历史反馈样本（{samples.length}）</h2>
           <textarea className="input" placeholder="粘贴一条历史反馈…" value={newSample} onChange={e => setNewSample(e.target.value)} />
           <div className="flex gap-2">
             <button onClick={upload} className="btn-soft">添加样本</button>
@@ -161,21 +165,21 @@ export default function SpecProfilePage() {
 
       {cur && !cur.isBuiltin && (
         <div className="card space-y-2">
-          <h2 className="font-semibold">修改差异学习</h2>
-          <p className="text-sm text-gray-600">已积累 {diffCount} 条修改记录{diffCount < 20 ? "（至少需 20 条）" : ""}</p>
-          <button onClick={doAnalyze} disabled={diffCount < 20} className="btn-purple">
+          <h2 className="section-title">修改差异学习</h2>
+          <p className="text-sm text-text-muted">已积累 {diffCount} 条修改记录{diffCount < 20 ? "（至少需 20 条）" : ""}</p>
+          <button onClick={doAnalyze} disabled={diffCount < 20} className="btn-primary">
             分析我的修改习惯
           </button>
           {suggestions.map((s, i) => (
-            <div key={i} className="border border-purple-200 rounded-md p-2 space-y-1 bg-purple-50">
-              <p className="text-xs text-gray-500">字段：{s.field}（证据 {s.evidenceCount} 条）</p>
+            <div key={i} className="card-accent p-2 space-y-1">
+              <p className="text-xs text-text-muted">字段：{s.field}（证据 {s.evidenceCount} 条）</p>
               <p className="text-xs">当前：{s.current || "（空）"}</p>
               <p className="text-xs">建议：{s.proposal}</p>
-              <p className="text-xs text-gray-600">观察：{s.observed}</p>
+              <p className="text-xs text-text-muted">观察：{s.observed}</p>
               <div className="flex gap-2 text-xs">
                 {s.id && <button onClick={async () => { await applySuggestion(s.id!); await reload(); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-green-600 hover:bg-green-50">采纳</button>}
-                {s.id && <button onClick={async () => { await applyAndLock(s.id!); await reload(); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-blue-600 hover:bg-blue-50">采纳并锁定</button>}
-                {s.id && <button onClick={async () => { await rejectSuggestion(s.id!); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-gray-600 hover:bg-gray-100">拒绝</button>}
+                {s.id && <button onClick={async () => { await applyAndLock(s.id!); await reload(); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-primary hover:bg-primary-surface">采纳并锁定</button>}
+                {s.id && <button onClick={async () => { await rejectSuggestion(s.id!); setSuggestions(suggestions.filter((x, j) => j !== i)); }} className="text-text-muted hover:bg-surface-2">拒绝</button>}
               </div>
             </div>
           ))}

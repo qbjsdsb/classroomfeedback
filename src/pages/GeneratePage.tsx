@@ -10,6 +10,7 @@ import { generateFeedback } from "../ai/generate";
 import { getApiKey } from "../hooks/useSettings";
 import { loadDraft, saveDraft, clearDraft } from "../hooks/useDraft";
 import { useNotify } from "../hooks/useNotify";
+import { Select } from "../components/Select";
 
 const TEMPLATES = ["【学生姓名】", "【今日知识点】", "【课堂表现】", "【家庭建议】"];
 
@@ -102,23 +103,29 @@ export default function GeneratePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">生成反馈</h1>
+      <div className="page-header">
+        <h1 className="text-xl font-bold">生成反馈</h1>
+      </div>
       <div className="grid grid-cols-2 gap-2">
-        <select value={studentId ?? ""} onChange={e => setStudentId(Number(e.target.value))} className="input">
-          <option value="">选择学生…</option>
-          {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-        <select value={profileId ?? ""} onChange={e => setProfileId(Number(e.target.value))} className="input">
-          <option value="">选择规范档…</option>
-          {availableProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <Select
+          value={studentId}
+          options={students.filter(s => s.id != null).map(s => ({ value: s.id!, label: s.name }))}
+          placeholder="选择学生…"
+          onChange={(v) => setStudentId(v)}
+        />
+        <Select
+          value={profileId}
+          options={availableProfiles.filter(p => p.id != null).map(p => ({ value: p.id!, label: p.name }))}
+          placeholder="选择规范档…"
+          onChange={(v) => setProfileId(v)}
+        />
       </div>
 
       {(() => {
         const p = profiles.find(p => p.id === profileId);
         if (!p || p.segments.length === 0) return null;
         return (
-          <div className="card p-2 space-y-1">
+          <div className="card-accent p-2 space-y-1">
             <p className="text-sm font-semibold">本次段落（默认全选，可临时取消）</p>
             {p.segments.map((s, i) => (
               <label key={i} className="flex items-center gap-2 text-sm">
@@ -140,14 +147,14 @@ export default function GeneratePage() {
 
       <div className="space-y-2">
         <div className="flex gap-2 flex-wrap">
-          {TEMPLATES.map(t => <button key={t} onClick={() => setText(text + t)} className="text-xs bg-gray-100 px-2 py-1 rounded">{t}</button>)}
+          {TEMPLATES.map(t => <button key={t} onClick={() => setText(text + t)} className="btn-soft text-xs">{t}</button>)}
           {isDesktop() && supported && (
-            <button onClick={recording ? stop : start} className={`text-xs px-2 py-1 rounded ${recording ? "bg-red-500 text-white" : "bg-blue-100"}`}>
+            <button onClick={recording ? stop : start} className={`text-xs px-2 py-1 rounded ${recording ? "bg-red-500 text-white" : "bg-primary-surface"}`}>
               {recording ? "停止录音" : "开始录音"}
             </button>
           )}
         </div>
-        {recording && interim && <p className="text-xs text-gray-500">实时：{interim}</p>}
+        {recording && interim && <p className="text-xs text-text-muted">实时：{interim}</p>}
         <textarea className="input h-40" placeholder="录音转写或手动输入本节课内容…" value={text} onChange={e => setText(e.target.value)} />
         <button onClick={doCorrect} disabled={correcting || !text} className="btn-soft">
           {correcting ? "纠错中…" : "AI 纠错"}
@@ -159,8 +166,8 @@ export default function GeneratePage() {
       </button>
 
       {preview && (
-        <div className="card space-y-2">
-          <h2 className="font-semibold">预览（可编辑）</h2>
+        <div className="card-accent space-y-2">
+          <h2 className="section-title">预览（可编辑）</h2>
           <textarea className="input h-48" value={editing} onChange={e => setEditing(e.target.value)} />
           <div className="flex gap-2">
             <button onClick={doGenerate} disabled={generating} className="btn-ghost">重新生成</button>
