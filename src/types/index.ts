@@ -2,11 +2,14 @@
 
 export type Tone = "正式书面" | "半书面" | "口语";
 
+export type SegmentFormat = "title" | "number" | "none";
+
 export interface SpecSegment {
   title: string;
   targetWords: number;
   contentPoints: string;
   freeNote: string;
+  format: SegmentFormat;
 }
 
 export interface StyleFeatures {

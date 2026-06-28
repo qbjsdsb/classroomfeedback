@@ -27,7 +27,7 @@ export async function updateProfile(id: number, patch: Partial<SpecProfile>): Pr
 export async function createProfile(subject: string, name: string): Promise<number> {
   return db.specProfiles.add({
     subject, name, tone: "半书面", styleNote: "",
-    segments: [{ title: "课堂内容", targetWords: 80, contentPoints: "", freeNote: "" }],
+    segments: [{ title: "课堂内容", targetWords: 80, contentPoints: "", freeNote: "", format: "none" }],
     opening: "", ending: "", styleFeatures: { ...DEFAULT_SF },
     lockedFields: [], isBuiltin: false, createdAt: Date.now(),
   });
@@ -48,12 +48,13 @@ export async function relearn(id: number): Promise<void> {
   const p = await db.specProfiles.get(id); if (!p) return;
   const locked = new Set(p.lockedFields);
   const mergeSeg = (idx: number, src: SpecSegment): SpecSegment => {
-    const existing = p.segments[idx] ?? { title: "", targetWords: 0, contentPoints: "", freeNote: "" };
+    const existing = p.segments[idx] ?? { title: "", targetWords: 0, contentPoints: "", freeNote: "", format: "none" as const };
     return {
       title: locked.has(`segments[${idx}].title`) ? existing.title : src.title,
       targetWords: locked.has(`segments[${idx}].targetWords`) ? existing.targetWords : src.targetWords,
       contentPoints: locked.has(`segments[${idx}].contentPoints`) ? existing.contentPoints : src.contentPoints,
       freeNote: locked.has(`segments[${idx}].freeNote`) ? existing.freeNote : src.freeNote,
+      format: locked.has(`segments[${idx}].format`) ? existing.format : ((src as any).format ?? existing.format ?? "none"),
     };
   };
   const segments = learned.segments.map((s, i) => mergeSeg(i, s));

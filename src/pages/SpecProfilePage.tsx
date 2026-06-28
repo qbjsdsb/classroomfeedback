@@ -175,7 +175,7 @@ export default function SpecProfilePage() {
               </div>
             ))}
             <button
-              onClick={() => { const segs = [...cur.segments, { title: "", targetWords: 0, contentPoints: "", freeNote: "" }]; patch(cur.id!, { segments: segs }); }}
+              onClick={() => { const segs = [...cur.segments, { title: "", targetWords: 0, contentPoints: "", freeNote: "", format: "none" as const }]; patch(cur.id!, { segments: segs }); }}
               className="btn-soft mt-1 w-full"
             >+ 添加段落</button>
           </div>

@@ -41,6 +41,7 @@ export async function learnSpec(args: { apiKey: string; samples: string[] }): Pr
     segments: Array.isArray(p.segments) ? p.segments.map((s: any) => ({
       title: String(s.title ?? ""), targetWords: Number(s.targetWords ?? 0) || 0,
       contentPoints: String(s.contentPoints ?? ""), freeNote: String(s.freeNote ?? ""),
+      format: "none",
     })) : [],
     opening: String(p.opening ?? ""), ending: String(p.ending ?? ""),
     styleFeatures: parseStyleFeatures(p.styleFeatures),
