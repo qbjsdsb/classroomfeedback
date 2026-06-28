@@ -65,7 +65,7 @@ export async function relearn(id: number): Promise<void> {
     opening: locked.has("opening") ? p.opening : learned.opening,
     ending: locked.has("ending") ? p.ending : learned.ending,
     styleFeatures: locked.has("styleFeatures") ? p.styleFeatures : learned.styleFeatures,
-    exemplarSamples: locked.has("exemplarSamples") ? p.exemplarSamples : ((learned as any).exemplarSamples ?? p.exemplarSamples ?? []),
+    exemplarSamples: locked.has("exemplarSamples") ? p.exemplarSamples : learned.exemplarSamples,
     segments,
   });
 }
