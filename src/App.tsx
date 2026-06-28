@@ -49,10 +49,10 @@ function BackupReminder() {
 }
 
 function ThemeToggle() {
-  const { theme, toggle } = useTheme();
-  const Icon = theme === "dark" ? Sun : Moon;
+  const { resolvedMode, toggleMode } = useTheme();
+  const Icon = resolvedMode === "dark" ? Sun : Moon;
   return (
-    <button onClick={toggle} className="btn-ghost p-2 shrink-0" aria-label="切换主题">
+    <button onClick={toggleMode} className="btn-ghost p-2 shrink-0" aria-label="切换明暗">
       <Icon className="w-4 h-4" />
     </button>
   );
@@ -72,7 +72,7 @@ export default function App() {
             <div className="max-w-content mx-auto px-4 flex items-center gap-2 h-14">
               <NavLink to="/" className="flex items-center gap-2 mr-2 font-bold text-text shrink-0">
                 <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="w-7 h-7" />
-                <span className="hidden sm:inline">课后反馈生成器</span>
+                <span className="hidden sm:inline">ClassFlow · 课后反馈</span>
               </NavLink>
               <div className="flex items-center gap-1 overflow-x-auto flex-1">
                 {NAV.map(n => (
