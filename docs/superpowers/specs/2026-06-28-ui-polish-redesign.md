@@ -8,17 +8,17 @@
 
 ### 1.1 背景
 
-主题系统重设计上线后，4 主题切换 + ClassFlow 品牌 + 衬线标题已落地。但用户反馈"排版布局还要优化"、"图标要好看"。诊断当前问题：
+主题系统重设计上线后，4 主题切换 + ClassFlow 品牌 + 衬线标题 + 导航栏图标已落地（App.tsx 已有 sticky + 毛玻璃 + 7 项带图标 + max-w-content 容器）。但用户反馈"排版布局还要优化"、"图标要好看"。进一步诊断：
 
-1. **页面宽度未约束**：内容可能撑满全屏，桌面端宽屏下行宽过长，阅读疲劳
-2. **首页 hero 太单薄**：只有标题 + 一段文字，缺视觉重心和行动引导
-3. **卡片网格千篇一律**：所有列表页都是简单堆叠，无信息层次
-4. **导航栏信息密度低**：只有 logo + 纯文字链接 + 主题切换，空旷且无图标
-5. **表单页布局松散**：表单字段直接堆叠，无分组视觉
-6. **移动端体验粗糙**：导航栏在小屏拥挤，无汉堡菜单
-7. **空状态/加载态简陋**：EmptyState 用 emoji，Skeleton 静态无动画
-8. **favicon 简单**：当前是简单书本线条，缺精致感
-9. **缺微交互**：卡片/按钮 hover 无反馈，导航无 hover 动效
+1. **页面宽度容器名错误**：App.tsx 用的 `max-w-content` 在 Tailwind 中不存在（未在 config 定义），实际未约束宽度
+2. **首页 hero 太单薄**：只有标题 + 一段文字，缺渐变背景、装饰、行动引导 CTA
+3. **列表页信息层次弱**：学生列表是单列卡片 + 平铺文字，无头像/网格/层次；反馈列表（在 StudentDetailPage 内）平铺
+4. **表单页布局松散**：学生编辑表单（StudentsPage 内联）字段直接堆叠，无分组视觉
+5. **移动端无汉堡菜单**：导航栏在小屏用 `overflow-x-auto` 横向滚动，体验粗糙
+6. **空状态用 emoji**：EmptyState 用 `📭` emoji，不专业
+7. **Skeleton 静态**：无 shimmer 动画
+8. **favicon 是蓝色**：当前 favicon.svg 用 `#2563eb` 蓝色，与温暖棕默认主题不协调
+9. **缺微交互**：卡片 hover 无上浮、导航链接无下划线动画、无 focus-visible 焦点环
 
 ### 1.2 目标
 
@@ -135,30 +135,40 @@
 
 ## 5. 列表页网格优化
 
-### 5.1 学生列表页（StudentsPage）
+### 5.1 学生列表（StudentsPage）
+
+现状：单列 `grid-cols-1 gap-2`，卡片内"姓名（年级）+ 编辑/删除按钮"平铺。
+
+升级为 3 列网格 + 头像 + 信息层次（保留编辑/删除按钮，移到卡片底部）：
 
 ```tsx
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {students.map(s => (
-    <div key={s.id} className="card card-hover">
+  {list.map(s => (
+    <div key={s.id} className="card card-hover flex flex-col">
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3 min-w-0">
+        <NavLink to={`/students/${s.id}`} className="flex items-center gap-3 min-w-0">
           <div className="shrink-0 w-10 h-10 rounded-full bg-primary-surface text-primary 
                           flex items-center justify-center font-semibold">
             {s.name.charAt(0)}
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-text truncate">{s.name}</h3>
-            <p className="text-xs text-text-muted">{s.grade}</p>
+            <h3 className="font-semibold text-text truncate hover:text-primary">{s.name}</h3>
+            <p className="text-xs text-text-muted">{s.grade || "未填年级"}</p>
           </div>
-        </div>
-        <span className="shrink-0 badge bg-primary-surface text-primary text-xs px-2 py-0.5 rounded-md">
-          {s.subject}
-        </span>
+        </NavLink>
+        {s.defaultSubject && (
+          <span className="shrink-0 bg-primary-surface text-primary text-xs px-2 py-0.5 rounded-md">
+            {s.defaultSubject}
+          </span>
+        )}
       </div>
-      {s.weakness && (
-        <p className="mt-3 text-sm text-text-muted line-clamp-2">{s.weakness}</p>
+      {s.weaknesses && (
+        <p className="mt-3 text-sm text-text-muted line-clamp-2 flex-1">{s.weaknesses}</p>
       )}
+      <div className="mt-3 pt-3 border-t border-border flex gap-2">
+        <button onClick={() => startEdit(s)} className="btn-ghost text-xs">编辑</button>
+        <button onClick={() => remove(s.id!)} className="btn-ghost text-xs text-red-600">删除</button>
+      </div>
     </div>
   ))}
 </div>
@@ -166,106 +176,136 @@
 
 - 网格 `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`（1/2/3 列）
 - 头像：学生姓首字母 + 主色 surface 圆形
-- 信息层次：姓名（大）/ 年级（小）/ 科目（徽章）/ 薄弱点（2 行截断）
-- 科目徽章用 `bg-primary-surface text-primary`
-- `line-clamp-2` 限制薄弱点显示行数
+- 信息层次：姓名（大，链接到详情）/ 年级（小）/ 科目（徽章）/ 薄弱点（2 行截断）
+- 编辑/删除按钮移到卡片底部，用 `border-t` 分隔
+- `flex flex-col` + `flex-1` 让卡片高度对齐
 
-### 5.2 反馈列表页（FeedbacksPage）
+### 5.2 反馈列表（StudentDetailPage 内）
+
+现状：反馈卡片平铺，含日期/科目 + 正文 + 编辑/复制/学习库按钮。
+
+升级为 2 列网格（反馈内容多，不挤 3 列）：
 
 ```tsx
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  {feedbacks.map(f => (
-    <div key={f.id} className="card card-hover">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-semibold text-text truncate">{f.studentName}</span>
-          <span className="text-xs text-text-muted">{formatDate(f.createdAt)}</span>
-        </div>
-        <span className="badge bg-primary-surface text-primary text-xs px-2 py-0.5 rounded-md">
-          {f.subject}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+  {list.map(f => (
+    <div key={f.id} className="card space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-text-muted">
+          {new Date(f.createdAt).toLocaleDateString()} · {f.subject}
         </span>
+        <label className="text-xs flex items-center gap-1 text-text-muted">
+          <input type="checkbox" checked={f.includeInLearning} onChange={() => toggleLearn(f)} /> 学习库
+        </label>
       </div>
-      <p className="text-sm text-text-muted line-clamp-3 leading-relaxed">{f.content}</p>
+      {editId === f.id ? (
+        <>
+          <textarea className="input h-32" value={editText} onChange={e => setEditText(e.target.value)} />
+          <button onClick={() => saveEdit(f.id!)} className="btn-ghost text-xs">保存</button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm whitespace-pre-wrap line-clamp-4">{f.finalText}</p>
+          <div className="flex gap-2 text-xs">
+            <button onClick={() => { setEditId(f.id!); setEditText(f.finalText); }} className="btn-ghost">编辑</button>
+            <button onClick={() => navigator.clipboard.writeText(f.finalText)} className="btn-ghost">复制</button>
+          </div>
+        </>
+      )}
     </div>
   ))}
 </div>
 ```
 
-- 反馈内容多，用 `grid-cols-1 lg:grid-cols-2`（1/2 列）
-- `line-clamp-3` 限制内容预览 3 行
+- 网格 `grid-cols-1 lg:grid-cols-2`（1/2 列）
+- 顶部：日期+科目 + 学习库勾选（移到右上角）
+- 正文 `line-clamp-4` 限制 4 行预览
+- 编辑/复制按钮保留
 
 ## 6. 表单页分组
 
-### 6.1 学生编辑页（StudentFormPage）
+### 6.1 学生编辑表单（StudentsPage 内联）
+
+现状：所有字段堆叠在单个 `.card` 内（姓名/年级/性格/薄弱点/家长关注/常用科目）。
+
+升级为 3 个分区卡片：
 
 ```tsx
-<div className="space-y-6">
-  <div className="page-header">
-    <h1 className="page-title text-xl font-bold">{id ? "编辑学生" : "添加学生"}</h1>
-  </div>
-
-  <div className="card space-y-4">
-    <h2 className="section-title">基本信息</h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="form-field">
-        <label className="label">姓名</label>
-        <input className="input" ... />
+{editing && (
+  <>
+    <div className="card space-y-4">
+      <h2 className="section-title">{editing.id ? "编辑" : "新建"}学生</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="form-field">
+          <label className="label">姓名</label>
+          <input className="input" placeholder="姓名" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+        </div>
+        <div className="form-field">
+          <label className="label">年级</label>
+          <input className="input" placeholder="年级" value={form.grade} onChange={e => setForm({ ...form, grade: e.target.value })} />
+        </div>
       </div>
       <div className="form-field">
-        <label className="label">年级</label>
-        <input className="input" ... />
+        <label className="label">常用科目（可选，如数学）</label>
+        <input className="input" placeholder="常用科目" value={form.defaultSubject} onChange={e => setForm({ ...form, defaultSubject: e.target.value })} />
       </div>
     </div>
-    <div className="form-field">
-      <label className="label">常用科目</label>
-      <input className="input" ... />
-    </div>
-  </div>
 
-  <div className="card space-y-4">
-    <h2 className="section-title">学习情况</h2>
-    <div className="form-field">
-      <label className="label">性格特点</label>
-      <textarea className="input" rows={2} ... />
+    <div className="card space-y-4">
+      <h2 className="section-title">学习情况</h2>
+      <div className="form-field">
+        <label className="label">性格特点</label>
+        <textarea className="input" rows={2} placeholder="性格特点" value={form.personality} onChange={e => setForm({ ...form, personality: e.target.value })} />
+      </div>
+      <div className="form-field">
+        <label className="label">薄弱点</label>
+        <textarea className="input" rows={2} placeholder="薄弱点" value={form.weaknesses} onChange={e => setForm({ ...form, weaknesses: e.target.value })} />
+      </div>
     </div>
-    <div className="form-field">
-      <label className="label">薄弱点</label>
-      <textarea className="input" rows={2} ... />
-    </div>
-  </div>
 
-  <div className="card space-y-4">
-    <h2 className="section-title">家长沟通</h2>
-    <div className="form-field">
-      <label className="label">家长关注点</label>
-      <textarea className="input" rows={2} ... />
+    <div className="card space-y-4">
+      <h2 className="section-title">家长沟通</h2>
+      <div className="form-field">
+        <label className="label">家长关注点</label>
+        <textarea className="input" rows={2} placeholder="家长关注点" value={form.parentFocus} onChange={e => setForm({ ...form, parentFocus: e.target.value })} />
+      </div>
     </div>
-  </div>
 
-  <div className="flex gap-2">
-    <button className="btn-primary px-4 py-2">保存</button>
-    <Link to="/students" className="btn-soft px-4 py-2">取消</Link>
-  </div>
-</div>
+    <div className="flex gap-2">
+      <button onClick={submit} className="btn-primary px-4 py-2">保存</button>
+      <button onClick={() => setEditing(null)} className="btn-soft px-4 py-2">取消</button>
+    </div>
+  </>
+)}
 ```
 
-- 三组分区卡片：基本信息 / 学习情况 / 家长沟通
-- 每个分区是独立 `.card`，用 `.section-title` 标题
-- 基本信息内字段用 `grid-cols-1 sm:grid-cols-2`，桌面端两列并排
+- 三组分区卡片：基本信息（含姓名/年级/常用科目）/ 学习情况（性格/薄弱点）/ 家长沟通（家长关注点）
+- 基本信息内姓名+年级用 `grid-cols-1 sm:grid-cols-2` 桌面端两列并排
 - 长文本字段用 `textarea rows={2}`
 - 操作按钮组独立于卡片外
+- 用 `editing` 状态控制显隐（替代现状的始终显示）
 
-### 6.2 规范档编辑页（SpecFormPage）
+### 6.2 字段迁移要求
 
-类似分组：基本信息 / 规范内容。具体字段按现有结构组织。
+重新组织字段分组时，不能丢失任何现有字段。现有字段：name / grade / personality / weaknesses / parentFocus / defaultSubject。实现时必须逐一核对，6 个字段全部迁移到新分组。
 
-### 6.3 字段迁移要求
+### 6.3 规范档编辑（SpecProfilePage）
 
-重新组织字段分组时，不能丢失任何现有字段。实现时必须先 Read 当前文件，确认所有字段都迁移到新分组。
+现状已是分区卡片结构（规范档卡片 + 历史样本卡片 + 修改差异卡片），布局合理。本次只做视觉微调：段落编辑区内的 `card-accent` 间距优化。不重写。
 
 ## 7. 导航栏增强
 
-### 7.1 结构
+### 7.1 现状
+
+App.tsx 已有：sticky + 毛玻璃 + 7 项带图标 + max-w-content（无效类名）+ overflow-x-auto 横向滚动。
+
+### 7.2 升级目标
+
+1. `max-w-content` → `max-w-5xl`（Tailwind 内置有效类）
+2. `overflow-x-auto` 横向滚动 → 移动端汉堡菜单
+3. NAV 常量抽到 `src/data/nav.ts`
+
+### 7.3 结构
 
 ```tsx
 <header className="border-b border-border bg-surface/80 backdrop-blur sticky top-0 z-40">
@@ -278,7 +318,8 @@
       
       <nav className="hidden sm:flex items-center gap-1">
         {NAV_ITEMS.map(item => (
-          <NavLink key={item.to} to={item.to} className={({isActive}) => 
+          <NavLink key={item.to} to={item.to} end={item.end}
+                   className={({isActive}) => 
             clsx("nav-link", isActive ? "nav-link-active" : "nav-link-inactive")}>
             <item.icon className="w-4 h-4" />
             <span>{item.label}</span>
@@ -298,7 +339,8 @@
     {mobileOpen && (
       <nav className="sm:hidden pb-3 flex flex-col gap-1">
         {NAV_ITEMS.map(item => (
-          <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
+          <NavLink key={item.to} to={item.to} end={item.end}
+                   onClick={() => setMobileOpen(false)}
                    className={({isActive}) => 
             clsx("nav-link", isActive ? "nav-link-active" : "nav-link-inactive")}>
             <item.icon className="w-4 h-4" />
@@ -311,110 +353,139 @@
 </header>
 ```
 
-### 7.2 NAV_ITEMS 常量
+main 容器同步改：
+```tsx
+<main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <Routes>...</Routes>
+</main>
+```
+
+### 7.4 NAV_ITEMS 常量
 
 新建 `src/data/nav.ts`：
 
 ```tsx
-import { Home, Users, BookOpen, Sparkles, FileText, BarChart3, Settings } from "lucide-react";
+import { Home, Users, BookOpen, Sparkles, FileText, BarChart3, Settings, Layers } from "lucide-react";
 import { ComponentType } from "react";
 
 export interface NavItem {
   to: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
+  end?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "首页", icon: Home },
+  { to: "/", label: "首页", icon: Home, end: true },
   { to: "/students", label: "学生", icon: Users },
   { to: "/spec", label: "规范档", icon: BookOpen },
   { to: "/generate", label: "生成", icon: Sparkles },
-  { to: "/feedbacks", label: "反馈", icon: FileText },
+  { to: "/batch", label: "批量", icon: Layers },
   { to: "/stats", label: "统计", icon: BarChart3 },
   { to: "/settings", label: "设置", icon: Settings },
 ];
 ```
 
-### 7.3 改动要点
-
-- sticky 顶栏：`sticky top-0 z-40`
-- 毛玻璃背景：`bg-surface/80 backdrop-blur`
-- 导航项配 lucide 图标（7 项）
-- 移动端汉堡菜单：< 640px 隐藏桌面导航，显示汉堡按钮
-- 导航栏容器用 `max-w-5xl mx-auto`，和主内容对齐
-- 移动端 logo 文字 `hidden sm:inline`
-- 路由切换时关闭移动端菜单
+注：现状 App.tsx 的 NAV 第 1 项用 BookOpen 图标（应为 Home），第 4 项 label "生成反馈"（简化为"生成"），第 5 项 label "批量生成"（简化为"批量"）。本次一并修正。
 
 ## 8. StatsPage 重设计
 
-### 8.1 结构
+### 8.1 现状
+
+StatsPage 是 "Token 消耗统计" 页面，数据来自 `getStats()`，返回 `{ total, byType, byDay, recent7 }`，全部是 token 用量。`recent7` 是 `{ day, tokens }`。
+
+### 8.2 升级目标（只做视觉升级，不改数据结构）
+
+保持 Token 统计定位，重设计视觉：4 列指标卡 + 优化柱状图 + 按类型卡片化。**不加学生排行**（避免改 useStats hook 数据结构，保持聚焦 UI 精致化）。
+
+### 8.3 结构
 
 ```tsx
-<div className="space-y-6">
-  <div className="page-header">
-    <h1 className="page-title text-xl font-bold">统计</h1>
-  </div>
+export default function StatsPage() {
+  const [s, setS] = useState<Stats | null>(null);
+  useEffect(() => { (async () => setS(await getStats()))(); }, []);
+  if (!s) return <Skeleton lines={4} />;
+  const max = Math.max(...s.recent7.map(d => d.tokens), 1);
+  return (
+    <div className="space-y-6">
+      <div className="page-header">
+        <h1 className="page-title text-xl font-bold">Token 消耗统计</h1>
+      </div>
 
-  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    <StatCard label="学生总数" value={stats.totalStudents} icon={Users} />
-    <StatCard label="反馈总数" value={stats.totalFeedbacks} icon={FileText} />
-    <StatCard label="本周生成" value={stats.weekCount} icon={Sparkles} />
-    <StatCard label="本月生成" value={stats.monthCount} icon={Calendar} />
-  </div>
+      {s.total === 0 ? (
+        <EmptyState icon={BarChart3} title="暂无消耗数据" hint="生成反馈后这里会显示 Token 消耗" 
+          action={<Link to="/generate" className="btn-primary">去生成</Link>} />
+      ) : (
+        <>
+          {/* 核心指标卡片 */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard label="总消耗" value={s.total} unit="tokens" icon={Zap} />
+            <StatCard label="近 7 天" value={s.recent7.reduce((a, b) => a + b.tokens, 0)} unit="tokens" icon={TrendingUp} />
+            <StatCard label="调用类型" value={Object.keys(s.byType).length} unit="类" icon={Layers} />
+            <StatCard label="活跃天数" value={Object.keys(s.byDay).length} unit="天" icon={Calendar} />
+          </div>
 
-  <div className="card">
-    <h2 className="section-title mb-4">近 7 天生成趋势</h2>
-    <div className="flex items-end justify-between gap-2 h-32">
-      {stats.recent7.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div className="text-xs text-text-muted">{d.count}</div>
-          <div 
-            className="w-full bg-primary rounded-t-md min-h-[4px] transition-all"
-            style={{ height: `${(d.count / maxCount) * 100}%` }}
-          />
-          <div className="text-xs text-text-muted">{d.label}</div>
-        </div>
-      ))}
+          {/* 近 7 天趋势 */}
+          <div className="card">
+            <h2 className="section-title mb-4">近 7 天趋势</h2>
+            <div className="flex items-end justify-between gap-2 h-32">
+              {s.recent7.map(d => (
+                <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="text-xs text-text-muted">{d.tokens}</div>
+                  <div 
+                    className="w-full bg-primary rounded-t-md min-h-[4px] transition-all"
+                    style={{ height: `${(d.tokens / max) * 100}%` }}
+                    title={`${d.day}: ${d.tokens}`}
+                  />
+                  <div className="text-xs text-text-muted">{d.day.slice(5)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 按类型分布 */}
+          <div className="card">
+            <h2 className="section-title mb-4">按调用类型</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+              {Object.entries(s.byType).map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between py-2 px-3 rounded-md bg-surface-2">
+                  <span className="text-sm text-text">{k}</span>
+                  <span className="text-sm font-semibold text-primary">{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
-  </div>
-
-  <div className="card">
-    <h2 className="section-title mb-4">学生反馈排行</h2>
-    <div className="space-y-2">
-      {stats.topStudents.map((s, i) => (
-        <div key={s.id} className="flex items-center gap-3 py-2">
-          <span className="shrink-0 w-6 h-6 rounded-md bg-primary-surface text-primary 
-                           text-xs font-bold flex items-center justify-center">
-            {i + 1}
-          </span>
-          <span className="flex-1 text-text">{s.name}</span>
-          <span className="text-sm text-text-muted">{s.count} 条</span>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
+  );
+}
 ```
 
-### 8.2 StatCard 子组件
+### 8.4 StatCard 子组件
 
 新建 `src/components/StatCard.tsx`：
 
 ```tsx
 import { ComponentType } from "react";
 
-export function StatCard({ label, value, icon: Icon }: { 
-  label: string; value: number; icon: ComponentType<{ className?: string }> 
+export function StatCard({ label, value, unit, icon: Icon }: { 
+  label: string; 
+  value: number; 
+  unit?: string;
+  icon: ComponentType<{ className?: string }> 
 }) {
   return (
     <div className="card">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-text-muted">{label}</p>
-          <p className="text-2xl font-bold text-text mt-1">{value}</p>
+        <div className="min-w-0">
+          <p className="text-xs text-text-muted truncate">{label}</p>
+          <p className="text-2xl font-bold text-text mt-1">
+            {value}
+            {unit && <span className="text-xs font-normal text-text-muted ml-1">{unit}</span>}
+          </p>
         </div>
-        <div className="w-9 h-9 rounded-lg bg-primary-surface flex items-center justify-center">
+        <div className="shrink-0 w-9 h-9 rounded-lg bg-primary-surface flex items-center justify-center">
           <Icon className="w-5 h-5 text-primary" />
         </div>
       </div>
@@ -423,24 +494,13 @@ export function StatCard({ label, value, icon: Icon }: {
 }
 ```
 
-### 8.3 useStats 升级
+### 8.5 改动要点
 
-新增 `topStudents` 字段：
-
-```ts
-interface TopStudent {
-  id: string;
-  name: string;
-  count: number;
-}
-
-interface Stats {
-  // ... 现有字段
-  topStudents: TopStudent[];  // 按反馈数降序，limit 5
-}
-```
-
-计算逻辑：按 studentId group + count + sort desc + limit 5。
+- **4 列指标卡**：总消耗 / 近 7 天累计 / 调用类型数 / 活跃天数，用现有 useStats 数据计算，不改 hook
+- **柱状图优化**：柱子用主色 + 圆角顶部 + 数字标注 + 日期标签，高度按最大值比例
+- **按类型分布**：改为 `grid-cols-2 lg:grid-cols-3` 卡片网格，每项是带背景的胶囊
+- 移除"全部历史（按日期）"长列表（信息密度低，已有趋势图足够）
+- EmptyState 用 BarChart3 图标
 
 ## 9. Skeleton + EmptyState 升级
 
@@ -613,23 +673,17 @@ button:focus-visible, a:focus-visible {
 
 ### 12.1 TDD（纯逻辑层）
 
-`useStats` 升级测试（tests/hooks/useStats.test.ts 加用例）：
-- 按学生 group + count
-- sort desc by count
-- limit 5
-- 空数据返回 `[]`
+本次为 UI 精致化改造，**无纯逻辑层新增**（useStats 不改、无新 hook）。不写 TDD 测试。
 
 ### 12.2 tsc + build 验证（UI 层）
 
-- Skeleton 升级：avatar prop 渲染头像骨架
-- EmptyState 升级：参数化图标渲染
-- StatCard 组件：渲染 label/value/icon
-- 导航栏移动端菜单：汉堡按钮点击展开/收起
+所有改动通过 `tsc -b && vite build` 验证类型 + 构建。每个 Task 完成后跑一次。
 
 ### 12.3 回归验证
 
 - 全量 79 测试不回归
 - grep 确认无 emoji 残留（EmptyState 不再用 `📭`）
+- grep 确认无 `max-w-content` 残留（改为 `max-w-5xl`）
 
 ## 13. 体积影响
 
@@ -659,37 +713,34 @@ button:focus-visible, a:focus-visible {
 
 8. **导航栏图标增加宽度**：7 项 + 图标在桌面端可能拥挤。`max-w-5xl` 1024px 下应能容纳，但需实际验证。如果拥挤可去掉部分图标或缩短 label。
 
-## 15. 实施顺序（8 Task）
+## 15. 实施顺序（7 Task）
 
 | Task | 内容 | 依赖 |
 |---|---|---|
-| 1 | favicon.svg 升级 | 无 |
-| 2 | index.css 加 hero-gradient + shimmer + 微交互 + focus-visible | 无 |
-| 3 | App.tsx max-w-5xl + 导航栏 sticky/毛玻璃/图标/汉堡菜单 + nav.ts | Task 2 |
-| 4 | HomePage hero 重设计 | Task 2 |
-| 5 | 列表页 + 表单页布局（Students/Feedbacks/StudentForm/SpecForm） | Task 2 |
-| 6 | StatsPage 重设计 + StatCard + useStats topStudents（TDD） | Task 2 |
-| 7 | Skeleton + EmptyState 升级 | Task 2 |
-| 8 | 最终验证 + grep + 推送 | 全部 |
+| 1 | favicon.svg 升级（蓝色 → 温暖棕书本） | 无 |
+| 2 | index.css 追加 hero-gradient + shimmer + 微交互 + focus-visible | 无 |
+| 3 | App.tsx max-w-5xl + 移动端汉堡菜单 + 抽 nav.ts | Task 2 |
+| 4 | HomePage hero 重设计（渐变 + 装饰圆 + CTA） | Task 2 |
+| 5 | StudentsPage 学生列表网格化 + 编辑表单分区 | Task 2 |
+| 6 | StudentDetailPage 反馈列表 2 列网格 | Task 2 |
+| 7 | StatsPage 视觉升级 + StatCard 组件 | Task 2 |
+| 8 | Skeleton + EmptyState 升级 + 最终验证 | Task 2 |
 
 ## 16. 验收标准
 
-- [ ] favicon 升级为带主色背景的书本图标
-- [ ] 所有页面内容在 max-w-5xl 容器内居中
-- [ ] 导航栏 sticky + 毛玻璃 + 7 项带图标
-- [ ] 移动端 < 640px 显示汉堡菜单
+- [ ] favicon 升级为温暖棕书本图标（`#7a5c3e`）
+- [ ] 所有页面内容在 max-w-5xl 容器内居中（无 max-w-content 残留）
+- [ ] 导航栏移动端 < 640px 显示汉堡菜单
 - [ ] 首页 hero 有渐变背景 + 装饰圆 + CTA 按钮组
 - [ ] 学生列表 3 列网格 + 头像 + 信息层次
-- [ ] 反馈列表 2 列网格 + 信息层次
 - [ ] 学生编辑表单分 3 区卡片 + 基本信息两列
-- [ ] 规范档编辑表单分区卡片
-- [ ] 统计页 4 列指标卡 + 优化柱状图 + 学生排行 Top 5
+- [ ] 反馈列表 2 列网格 + 信息层次
+- [ ] 统计页 4 列指标卡 + 优化柱状图 + 按类型胶囊
 - [ ] Skeleton 支持 avatar prop + shimmer 动画
-- [ ] EmptyState 参数化图标 + 圆形容器
+- [ ] EmptyState 参数化图标 + 圆形容器（无 emoji）
 - [ ] 卡片 hover 上浮 2px + 阴影加深
 - [ ] 导航链接 hover 下划线动画
-- [ ] 按钮 hover 上浮 1px
 - [ ] 键盘 focus-visible 焦点环
 - [ ] prefers-reduced-motion 禁用 shimmer
-- [ ] 全量测试通过，build 成功
+- [ ] 全量 79 测试通过，build 成功
 - [ ] 线上验证所有视觉点
