@@ -20,6 +20,17 @@ export function generatePrompt(
     `第${i + 1}段「${s.title}」约${s.targetWords}字，要点：${s.contentPoints}${s.freeNote ? "；补充：" + s.freeNote : ""}`
   ).join("\n");
 
+  // 输出格式规则：基于每段 format 生成具体指令
+  const formatRules = includedSegments.map((s, i) => {
+    if (s.format === "title") {
+      return `第${i + 1}段以"【${s.title}】"开头，后接正文`;
+    } else if (s.format === "number") {
+      return `第${i + 1}段以"${i + 1}. "开头，后接正文`;
+    } else {
+      return `第${i + 1}段直接写正文，无标题无序号`;
+    }
+  }).join("\n");
+
   // few-shot：取 history 中 includeInLearning=true 的，最多 5 条
   const fewShot = history.filter(h => h.includeInLearning && h.finalText).slice(-5);
   const fewShotTxt = fewShot.length > 0
@@ -41,13 +52,25 @@ ${sf.addressStyle ? `- 称呼方式：${sf.addressStyle}\n` : ""}${sf.punctuatio
 
   const system = `你是教培课后反馈撰写助手。严格按以下规范档撰写反馈。
 语气：${profile.tone}；风格说明：${profile.styleNote}
-段落结构：
+
+## 段落结构与要点（只能写这些内容）
 ${segDesc}
-开头：${profile.opening}
-结尾：${profile.ending}
+
+## 输出格式规则（必须严格遵守）
+${formatRules}
+- 段落之间用一个空行分隔
+- 开头"${profile.opening}"融入第1段开头，不独立成段
+- 结尾"${profile.ending}"融入最后一段结尾，不独立成段
+- 整篇反馈只含上述${includedSegments.length}个段落，不得增减段落
+
+## 内容边界（必须严格遵守）
+- 只能输出上述段落要点描述的内容，不得新增 segments 之外的段落、句子、寒暄、客套话、署名
+- styleFeatures 的温暖度/鼓励倾向只能通过用词和语气体现，不得新增独立句子或段落
+- 不得添加"希望家长配合""如有疑问联系老师"等 segments 未列出的客套话（除非 ending 字段明确要求）
+- 每段内容紧扣该段 contentPoints，不跨段混写
 
 ${sfTxt}
-${fewShotTxt ? `\n## 参考示例（请模仿其风格、语气、长度、结构）\n${fewShotTxt}` : ""}
+${fewShotTxt ? `\n## 参考示例（仅参考语气/用词/句式/长度，不参考其段落结构）\n注意：示例的格式/分段方式/标题样式不得模仿，段落结构严格以上述规范档 segments 为准。\n${fewShotTxt}` : ""}
 ${JSON_INSTRUCTION}
 输出 JSON 格式：{"feedback":"整篇反馈正文"}`;
   const user = `学生姓名：${student.name}；年级：${student.grade}；性格：${student.personality}；薄弱点：${student.weaknesses}；家长关注：${student.parentFocus}
