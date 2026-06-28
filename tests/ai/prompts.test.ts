@@ -11,6 +11,7 @@ const profile: SpecProfile = {
   ],
   opening: "该生今日", ending: "望配合",
   styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+  exemplarSamples: [],
   lockedFields: [], isBuiltin: false, createdAt: 0,
 };
 const student: Student = { name: "张三", grade: "初三", personality: "", weaknesses: "", parentFocus: "", defaultSubject: "", createdAt: 0 };

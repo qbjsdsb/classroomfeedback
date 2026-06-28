@@ -155,6 +155,18 @@ export default function SpecProfilePage() {
               <input className="input" placeholder="如：长短句结合 / 多用短句 / 多用排比" value={sf.sentencePattern} onChange={e => patch(cur.id!, { styleFeatures: { ...sf, sentencePattern: e.target.value } })} />
             </div>
           </div>
+          {cur?.exemplarSamples && cur.exemplarSamples.length > 0 && (
+            <div className="card space-y-2">
+              <h2 className="section-title">金标准样本（learn 时自动选取，生成时最严格模仿）</h2>
+              <p className="hint">以下是该规范档学到的最典型反馈原文。生成新反馈时会以这些为金标准模仿。</p>
+              {cur.exemplarSamples.map((s, i) => (
+                <div key={i} className="card-accent">
+                  <div className="text-xs text-text-muted mb-1">金标准 {i + 1}</div>
+                  <div className="whitespace-pre-wrap text-sm">{s}</div>
+                </div>
+              ))}
+            </div>
+          )}
           <div>
             <span className="text-sm">段落（可编辑）</span>
             {cur.segments.map((s, i) => (

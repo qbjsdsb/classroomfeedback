@@ -64,19 +64,26 @@ export interface Candidate {
   subject?: string;
 }
 
-/** 从候选中选 topN 最相似的（score > 0 才返回） */
+/** 从候选中选 topN 最相似的（score > 0 才返回；sameStudentFirst 时同一学生的即使 score=0 也保留并强制排前） */
 export function selectTopN(
   query: string,
   candidates: Candidate[],
-  opts: { topN?: number; preferSameStudent?: number; preferSameSubject?: string } = {}
+  opts: { topN?: number; preferSameStudent?: number; preferSameSubject?: string; sameStudentFirst?: boolean } = {}
 ): { id: number; score: number }[] {
-  const { topN = 5, preferSameStudent, preferSameSubject } = opts;
+  const { topN = 5, preferSameStudent, preferSameSubject, sameStudentFirst } = opts;
   const scored = candidates.map(c => {
     let score = similarity(query, c.text);
     if (preferSameStudent !== undefined && c.studentId === preferSameStudent) score += 0.3;
     if (preferSameSubject && c.subject === preferSameSubject) score += 0.1;
-    return { id: c.id, score };
+    return { id: c.id, score, _sameStudent: sameStudentFirst && preferSameStudent !== undefined && c.studentId === preferSameStudent };
   });
-  scored.sort((a, b) => b.score - a.score);
-  return scored.filter(s => s.score > 0).slice(0, topN);
+  // sameStudentFirst 时，同一学生的强制排前，内部按 score 降序；其余按 score 降序
+  scored.sort((a, b) => {
+    if (sameStudentFirst) {
+      if (a._sameStudent && !b._sameStudent) return -1;
+      if (!a._sameStudent && b._sameStudent) return 1;
+    }
+    return b.score - a.score;
+  });
+  return scored.filter(s => s.score > 0 || s._sameStudent).slice(0, topN).map(({ id, score }) => ({ id, score }));
 }

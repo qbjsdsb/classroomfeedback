@@ -108,4 +108,53 @@ describe("learnSpec styleFeatures 解析", () => {
     const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
     expect(result.segments[0].format).toBe("none");
   });
+
+  it("exemplarSamples 正确解析", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+        exemplarSamples: ["这是第一条代表性样本", "这是第二条代表性样本"],
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.exemplarSamples.length).toBe(2);
+    expect(result.exemplarSamples[0]).toBe("这是第一条代表性样本");
+    expect(result.exemplarSamples[1]).toBe("这是第二条代表性样本");
+  });
+
+  it("exemplarSamples 缺失或非数组时返回空数组", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+        // exemplarSamples 缺失
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.exemplarSamples).toEqual([]);
+
+    // 非数组
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+        exemplarSamples: "不是数组",
+      }),
+    });
+    const result2 = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result2.exemplarSamples).toEqual([]);
+  });
+
+  it("exemplarSamples 过滤非字符串和空串，最多取 2 条", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [],
+        opening: "", ending: "",
+        exemplarSamples: ["有效样本", 123, "", "   ", "第二条有效", "第三条"],
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.exemplarSamples).toEqual(["有效样本", "第二条有效"]);
+  });
 });

@@ -10,6 +10,7 @@ export const BUILTIN_PROFILES: SpecProfile[] = [
       warmth: 5, formality: 1, conciseness: 2, encouragement: 5,
       addressStyle: "XX妈妈", punctuation: "口语化，多用感叹号", sentencePattern: "多用短句",
     },
+    exemplarSamples: [],
     lockedFields: [], isBuiltin: true, createdAt: 0,
   },
   {
@@ -24,6 +25,7 @@ export const BUILTIN_PROFILES: SpecProfile[] = [
       warmth: 3, formality: 5, conciseness: 3, encouragement: 4,
       addressStyle: "XX家长您好", punctuation: "规范标点，多用句号", sentencePattern: "长短句结合",
     },
+    exemplarSamples: [],
     lockedFields: [], isBuiltin: true, createdAt: 0,
   },
   {
@@ -39,6 +41,7 @@ export const BUILTIN_PROFILES: SpecProfile[] = [
       warmth: 4, formality: 3, conciseness: 5, encouragement: 3,
       addressStyle: "XX妈妈您好", punctuation: "规范标点", sentencePattern: "长短句结合",
     },
+    exemplarSamples: [],
     lockedFields: [], isBuiltin: true, createdAt: 0,
   },
 ];

@@ -40,6 +40,7 @@ function parseStyleFeatures(sf: any): StyleFeatures {
 export async function learnSpec(args: { apiKey: string; samples: string[] }): Promise<{
   tone: Tone; styleNote: string; segments: SpecSegment[]; opening: string; ending: string;
   styleFeatures: StyleFeatures;
+  exemplarSamples: string[];
 }> {
   const messages = learnPrompt(args.samples);
   const res = await callDeepSeek({ apiKey: args.apiKey, model: "deepseek-chat", messages, responseFormatJson: true }, "learn");
@@ -54,5 +55,8 @@ export async function learnSpec(args: { apiKey: string; samples: string[] }): Pr
     })) : [],
     opening: String(p.opening ?? ""), ending: String(p.ending ?? ""),
     styleFeatures: parseStyleFeatures(p.styleFeatures),
+    exemplarSamples: Array.isArray(p.exemplarSamples)
+      ? p.exemplarSamples.filter((s: any) => typeof s === "string" && s.trim()).slice(0, 2).map((s: string) => s)
+      : [],
   };
 }

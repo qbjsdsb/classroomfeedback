@@ -7,9 +7,9 @@ beforeEach(async () => {
   await db.open();
   // 准备测试数据：3 个规范档，subject 分别为 通用/通用/数学
   await db.specProfiles.bulkAdd([
-    { subject: "通用", name: "简短", tone: "口语", styleNote: "", segments: [], opening: "", ending: "", styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" }, lockedFields: [], isBuiltin: true, createdAt: 1 },
-    { subject: "通用", name: "正式", tone: "正式书面", styleNote: "", segments: [], opening: "", ending: "", styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" }, lockedFields: [], isBuiltin: true, createdAt: 2 },
-    { subject: "数学", name: "数学专用", tone: "半书面", styleNote: "", segments: [], opening: "", ending: "", styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" }, lockedFields: [], isBuiltin: false, createdAt: 3 },
+    { subject: "通用", name: "简短", tone: "口语", styleNote: "", segments: [], opening: "", ending: "", styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" }, exemplarSamples: [], lockedFields: [], isBuiltin: true, createdAt: 1 },
+    { subject: "通用", name: "正式", tone: "正式书面", styleNote: "", segments: [], opening: "", ending: "", styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" }, exemplarSamples: [], lockedFields: [], isBuiltin: true, createdAt: 2 },
+    { subject: "数学", name: "数学专用", tone: "半书面", styleNote: "", segments: [], opening: "", ending: "", styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" }, exemplarSamples: [], lockedFields: [], isBuiltin: false, createdAt: 3 },
   ]);
 });
 

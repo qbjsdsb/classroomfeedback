@@ -29,6 +29,7 @@ export async function createProfile(subject: string, name: string): Promise<numb
     subject, name, tone: "半书面", styleNote: "",
     segments: [{ title: "课堂内容", targetWords: 80, contentPoints: "", freeNote: "", format: "none" }],
     opening: "", ending: "", styleFeatures: { ...DEFAULT_SF },
+    exemplarSamples: [],
     lockedFields: [], isBuiltin: false, createdAt: Date.now(),
   });
 }
@@ -64,6 +65,7 @@ export async function relearn(id: number): Promise<void> {
     opening: locked.has("opening") ? p.opening : learned.opening,
     ending: locked.has("ending") ? p.ending : learned.ending,
     styleFeatures: locked.has("styleFeatures") ? p.styleFeatures : learned.styleFeatures,
+    exemplarSamples: locked.has("exemplarSamples") ? p.exemplarSamples : learned.exemplarSamples,
     segments,
   });
 }

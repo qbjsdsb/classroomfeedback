@@ -21,6 +21,7 @@ describe("db schema", () => {
       subject: "数学", name: "p", tone: "正式书面", styleNote: "",
       segments: [], opening: "", ending: "",
       styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+      exemplarSamples: [],
       lockedFields: [], isBuiltin: false, createdAt: Date.now()
     });
     expect(id).toBeGreaterThan(0);
@@ -31,6 +32,7 @@ describe("db schema", () => {
       subject: "数学", name: "p", tone: "正式书面", styleNote: "",
       segments: [], opening: "", ending: "",
       styleFeatures: { warmth: 3, formality: 3, conciseness: 3, encouragement: 3, addressStyle: "", punctuation: "", sentencePattern: "" },
+      exemplarSamples: [],
       lockedFields: [], isBuiltin: false, createdAt: Date.now()
     });
     const stid = await db.students.add({
