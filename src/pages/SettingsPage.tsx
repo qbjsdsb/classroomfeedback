@@ -10,15 +10,17 @@ export default function SettingsPage() {
   const save = async () => { await saveApiKey(key); notify.success("已保存"); };
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">设置</h1>
-      <label className="block">
-        <span className="label">DeepSeek API Key</span>
+      <div className="page-header">
+        <h1 className="text-xl font-bold">设置</h1>
+      </div>
+      <div className="form-field">
+        <label className="label">DeepSeek API Key</label>
         <input type="password" value={key} onChange={e => setKey(e.target.value)}
-          className="input mt-1" placeholder="sk-..." />
-      </label>
+          className="input" placeholder="sk-..." />
+      </div>
       <button onClick={save} className="btn-primary">保存</button>
       <p className="hint">Key 仅存在本机浏览器，不会上传。</p>
-      <div className="border-t pt-3 space-y-2">
+      <div className="border-t border-border pt-3 space-y-2">
         <h2 className="font-semibold">数据备份</h2>
         <p className="text-xs text-orange-600">导出文件含学生信息，请妥善保管。</p>
         <div className="flex gap-2">
