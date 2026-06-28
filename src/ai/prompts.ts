@@ -16,11 +16,12 @@ export function generatePrompt(
   history: Feedback[],
   includedSegments: SpecSegment[],
 ) {
-  const segDesc = includedSegments.map((s, i) =>
-    `第${i + 1}段「${s.title}」约${s.targetWords}字，要点：${s.contentPoints}${s.freeNote ? "；补充：" + s.freeNote : ""}`
+  // 内容覆盖清单：segments 降级为"确保提到这些点"
+  const contentChecklist = includedSegments.map((s, i) =>
+    `第${i + 1}段「${s.title}」：确保提到以下要点——${s.contentPoints}${s.freeNote ? "（补充：" + s.freeNote + "）" : ""}`
   ).join("\n");
 
-  // 输出格式规则：基于每段 format 生成具体指令
+  // 输出格式规则：基于每段 format（保留，客观格式）
   const formatRules = includedSegments.map((s, i) => {
     if (s.format === "title") {
       return `第${i + 1}段以"【${s.title}】"开头，后接正文`;
@@ -31,46 +32,34 @@ export function generatePrompt(
     }
   }).join("\n");
 
-  // few-shot：取 history 中 includeInLearning=true 的，最多 5 条
-  const fewShot = history.filter(h => h.includeInLearning && h.finalText).slice(-5);
-  const fewShotTxt = fewShot.length > 0
-    ? fewShot.map((h, i) => `### 示例 ${i + 1}\n课程内容：${h.courseContent || "（未记录）"}\n反馈：${h.finalText}`).join("\n\n")
+  // 金标准样本（learn 时选的代表性原文）
+  const exemplarTxt = profile.exemplarSamples && profile.exemplarSamples.length > 0
+    ? profile.exemplarSamples.map((s, i) => `### 金标准 ${i + 1}（该老师最典型的反馈，必须最严格模仿其语气/句式/节奏/用词）\n${s}`).join("\n\n")
     : "";
 
-  // 风格特征强约束
-  const sf = profile.styleFeatures;
-  const warmthDesc = ["", "冷静客观", "平和", "适中", "温暖", "非常温暖亲切"][sf.warmth] || "适中";
-  const formalityDesc = ["", "口语化", "半口语", "适中", "正式", "非常正式书面"][sf.formality] || "适中";
-  const concisenessDesc = ["", "极简", "简洁", "适中", "详细", "非常详细展开"][sf.conciseness] || "适中";
-  const encouragementDesc = ["", "少鼓励", "偶尔鼓励", "适中", "多鼓励", "充满鼓励肯定"][sf.encouragement] || "适中";
-  const sfTxt = `## 风格特征（必须严格遵守）
-- 温暖度：${sf.warmth}/5（${warmthDesc}）
-- 正式度：${sf.formality}/5（${formalityDesc}）
-- 简洁度：${sf.conciseness}/5（${concisenessDesc}）
-- 鼓励倾向：${sf.encouragement}/5（${encouragementDesc}）
-${sf.addressStyle ? `- 称呼方式：${sf.addressStyle}\n` : ""}${sf.punctuation ? `- 标点偏好：${sf.punctuation}\n` : ""}${sf.sentencePattern ? `- 句式偏好：${sf.sentencePattern}` : ""}`;
+  // few-shot：历史反馈作为模仿模板（最多 3 条）
+  const fewShot = history.filter(h => h.includeInLearning && h.finalText).slice(-3);
+  const fewShotTxt = fewShot.length > 0
+    ? fewShot.map((h, i) => `### 模仿范本 ${i + 1}（逐字模仿其句式/连接词/段落长度/标点/语气节奏，只换课程内容）\n课程内容：${h.courseContent || "（未记录）"}\n反馈：${h.finalText}`).join("\n\n")
+    : "";
 
-  const system = `你是教培课后反馈撰写助手。严格按以下规范档撰写反馈。
-语气：${profile.tone}；风格说明：${profile.styleNote}
+  const system = `你是教培课后反馈撰写助手。你的任务是：用与老师历史反馈**完全相同的语气、句式、连接词、段落长度、标点习惯、节奏**撰写今天的反馈，只把课程内容换成今天的。像是同一个人写的。
 
-## 段落结构与要点（只能写这些内容）
-${segDesc}
+${exemplarTxt ? `## 金标准（最严格模仿）\n${exemplarTxt}\n\n` : ""}${fewShotTxt ? `## 模仿范本（逐字模仿其风格）\n${fewShotTxt}\n\n` : ""}## 内容覆盖清单（确保提到这些点，怎么写看上面范本）
+${contentChecklist}
 
-## 输出格式规则（必须严格遵守）
+## 输出格式规则（客观格式，必须遵守）
 ${formatRules}
 - 段落之间用一个空行分隔
-- 开头"${profile.opening}"融入第1段开头，不独立成段
-- 结尾"${profile.ending}"融入最后一段结尾，不独立成段
 - 整篇反馈只含上述${includedSegments.length}个段落，不得增减段落
+${profile.opening ? `- 开头参考范本的方式融入第1段（如范本用"${profile.opening}"开头，今天也用类似方式）` : ""}${profile.ending ? `- 结尾参考范本的方式融入最后一段` : ""}
 
 ## 内容边界（必须严格遵守）
-- 只能输出上述段落要点描述的内容，不得新增 segments 之外的段落、句子、寒暄、客套话、署名
-- styleFeatures 的温暖度/鼓励倾向只能通过用词和语气体现，不得新增独立句子或段落
-- 不得添加"希望家长配合""如有疑问联系老师"等 segments 未列出的客套话（除非 ending 字段明确要求）
-- 每段内容紧扣该段 contentPoints，不跨段混写
+- 只能输出上述段落，不得新增 segments 之外的段落、句子、寒暄、客套话、署名
+- 不得添加"希望家长配合""如有疑问联系老师"等范本未出现的客套话
+- 每段内容紧扣该段要点，不跨段混写
+- 语气/用词/句式严格模仿上面的金标准和范本，不要用 AI 自己的腔调
 
-${sfTxt}
-${fewShotTxt ? `\n## 参考示例（仅参考语气/用词/句式/长度，不参考其段落结构）\n注意：示例的格式/分段方式/标题样式不得模仿，段落结构严格以上述规范档 segments 为准。\n${fewShotTxt}` : ""}
 ${JSON_INSTRUCTION}
 输出 JSON 格式：{"feedback":"整篇反馈正文"}`;
   const user = `学生姓名：${student.name}；年级：${student.grade}；性格：${student.personality}；薄弱点：${student.weaknesses}；家长关注：${student.parentFocus}

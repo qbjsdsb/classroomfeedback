@@ -9,7 +9,7 @@ export async function generateFeedback(args: {
   apiKey: string; profile: SpecProfile; student: Student; courseContent: string; history: Feedback[];
   includedSegments: SpecSegment[];
 }): Promise<{ feedback: string }> {
-  // few-shot 检索：从 history 中选最相似的 top 5（学生偏好 +0.3，同科目偏好 +0.1）
+  // few-shot 检索：同一学生优先（强制排前），top 3
   const candidates = args.history.map(h => ({
     id: h.id!,
     text: h.finalText,
@@ -17,9 +17,10 @@ export async function generateFeedback(args: {
     subject: args.profile.subject,
   }));
   const top = selectTopN(args.courseContent, candidates, {
-    topN: 5,
+    topN: 3,
     preferSameStudent: args.student.id,
     preferSameSubject: args.profile.subject,
+    sameStudentFirst: true,
   });
   const topIds = new Set(top.map(t => t.id));
   const fewShot = args.history.filter(h => h.id !== undefined && topIds.has(h.id));
