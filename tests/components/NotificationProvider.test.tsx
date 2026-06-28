@@ -154,7 +154,7 @@ describe("NotificationProvider Toast", () => {
     }
     const { container } = render(<NotificationProvider><H6 /></NotificationProvider>);
     fireEvent.click(screen.getByText("ask"));
-    const overlay = document.body.querySelector(".notify-overlay") as HTMLElement;
+    const overlay = document.body.querySelector(".modal-overlay") as HTMLElement;
     fireEvent.click(overlay);
     await act(async () => { await Promise.resolve(); });
     expect(result).toBe(false);

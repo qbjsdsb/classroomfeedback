@@ -1,5 +1,8 @@
 import { createContext, useCallback, useRef, useState, useEffect, ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { clsx } from "clsx";
+import { CheckCircle2, XCircle, Info, X } from "lucide-react";
 
 export type ToastType = "success" | "error" | "info";
 export interface ToastItem { id: string; type: ToastType; message: string; duration: number; }
@@ -17,24 +20,23 @@ export const NotificationContext = createContext<NotifyApi | null>(null);
 const MAX_TOASTS = 4;
 const DURATION: Record<ToastType, number> = { success: 3000, error: 5000, info: 3000 };
 
-const ICON: Record<ToastType, string> = { success: "✓", error: "✕", info: "ⓘ" };
-const BORDER: Record<ToastType, string> = {
-  success: "border-l-4 border-green-500",
-  error: "border-l-4 border-red-500",
-  info: "border-l-4 border-blue-500",
-};
-const ICON_COLOR: Record<ToastType, string> = {
-  success: "text-green-600", error: "text-red-600", info: "text-blue-600",
+const TOAST_ICON = { success: CheckCircle2, error: XCircle, info: Info };
+const TOAST_ICON_COLOR: Record<ToastType, string> = {
+  success: "text-emerald-500", error: "text-red-500", info: "text-primary",
 };
 
 function ToastView({ item, onClose }: { item: ToastItem; onClose: () => void }) {
   const [show, setShow] = useState(false);
   useEffect(() => { setShow(true); }, []);
+  const Icon = TOAST_ICON[item.type];
   return (
-    <div className={`bg-white shadow-md rounded-md px-3 py-2 flex items-center gap-2 min-w-[200px] max-w-sm transition-all duration-150 ${BORDER[item.type]} ${show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
-      <span className={ICON_COLOR[item.type]}>{ICON[item.type]}</span>
-      <span className="flex-1 text-sm text-gray-800">{item.message}</span>
-      <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+    <div className={clsx(
+      "bg-surface border border-border shadow-card-hover rounded-md px-3 py-2 flex items-center gap-2 min-w-[200px] max-w-sm transition-all duration-150",
+      show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+    )}>
+      <Icon className={clsx("w-4 h-4 flex-shrink-0", TOAST_ICON_COLOR[item.type])} />
+      <span className="flex-1 text-sm text-text">{item.message}</span>
+      <button onClick={onClose} className="text-text-muted hover:text-text"><X className="w-3.5 h-3.5" /></button>
     </div>
   );
 }
@@ -87,13 +89,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  useEffect(() => {
-    if (!modal) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeModal(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [modal, closeModal]);
-
   const api: NotifyApi = {
     success: (m) => push("success", m, DURATION.success),
     error: (m) => push("error", m, DURATION.error),
@@ -105,19 +100,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationContext.Provider value={api}>
       {children}
-      {modal && createPortal(
-        <div className="notify-overlay fixed inset-0 z-40 bg-black/40 flex items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) closeModal(false); }}>
-          <div className="card max-w-sm w-full mx-4 space-y-3">
-            <h3 className="font-bold text-gray-800">{modal.title}</h3>
-            {modal.message && <p className="text-sm text-gray-600">{modal.message}</p>}
+      <Dialog open={modal !== null} onClose={() => closeModal(false)} className="relative z-50">
+        <div className="modal-overlay fixed inset-0 bg-black/40" onClick={() => closeModal(false)} />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="bg-surface border border-border rounded-lg shadow-card-hover max-w-sm w-full p-5 space-y-3">
+            <DialogTitle className="font-bold text-text">{modal?.title}</DialogTitle>
+            {modal?.message && <p className="text-sm text-text-muted">{modal.message}</p>}
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => closeModal(false)} className="btn-soft">取消</button>
-              <button onClick={() => closeModal(true)} className="btn-danger">确认</button>
+              <button onClick={() => closeModal(true)} className="btn-primary">确认</button>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </DialogPanel>
+        </div>
+      </Dialog>
       {createPortal(
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {toasts.map(t => (
