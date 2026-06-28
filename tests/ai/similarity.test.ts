@@ -68,4 +68,36 @@ describe("selectTopN", () => {
     // 学生 10 的两条都是数学，应被加权
     expect(withPref[0].score).toBeGreaterThanOrEqual(withoutPref[0].score);
   });
+
+  it("sameStudentFirst 时同一学生强制排前（即使词频相似度为 0）", () => {
+    // 候选 2（学生 20，"复习语文古诗词"）与查询 "数学应用题" 词频相似度为 0
+    // 但 sameStudentFirst + preferSameStudent=20 时应排第一
+    const result = selectTopN("数学应用题", candidates, {
+      topN: 10,
+      preferSameStudent: 20,
+      sameStudentFirst: true,
+    });
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0].id).toBe(2);
+    expect(result[0].score).toBeGreaterThanOrEqual(0);  // score 可能是 0.3（preferSameStudent 加权）或 0
+  });
+
+  it("sameStudentFirst 时同一学生内部按 score 降序", () => {
+    // 学生 10 有两条：候选 1（"今天学了数学应用题"）和候选 3（"数学函数练习"）
+    // 查询 "数学应用题"：候选 1 相似度更高
+    const result = selectTopN("数学应用题", candidates, {
+      topN: 10,
+      preferSameStudent: 10,
+      sameStudentFirst: true,
+    });
+    // 学生 10 的两条应排在前两位
+    const top2Ids = result.slice(0, 2).map(r => r.id);
+    expect(top2Ids).toContain(1);
+    expect(top2Ids).toContain(3);
+    // 候选 1（"今天学了数学应用题"）与查询更相似，应排在候选 3 前
+    const idx1 = result.findIndex(r => r.id === 1);
+    const idx3 = result.findIndex(r => r.id === 3);
+    expect(idx1).toBeLessThan(idx3);
+    expect(result[idx1].score).toBeGreaterThanOrEqual(result[idx3].score);
+  });
 });
