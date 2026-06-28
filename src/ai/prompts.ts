@@ -61,7 +61,14 @@ export function learnPrompt(samples: string[]) {
   const system = `你是反馈格式分析助手。分析以下历史反馈样本，归纳出统一的格式规范和风格特征。
 ${JSON_INSTRUCTION}
 输出 JSON 格式：
-{"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充"}],"opening":"常用开头","ending":"常用结尾","styleFeatures":{"warmth":1-5,"formality":1-5,"conciseness":1-5,"encouragement":1-5,"addressStyle":"称呼方式","punctuation":"标点偏好","sentencePattern":"句式偏好"}}
+{"tone":"正式书面|半书面|口语","styleNote":"风格说明","segments":[{"title":"段落标题","targetWords":数字,"contentPoints":"要点","freeNote":"补充","format":"title|number|none"}],"opening":"常用开头","ending":"常用结尾","styleFeatures":{"warmth":1-5,"formality":1-5,"conciseness":1-5,"encouragement":1-5,"addressStyle":"称呼方式","punctuation":"标点偏好","sentencePattern":"句式偏好"}}
+
+段落 format 字段说明（重要）：
+- "title"：段落以【标题】开头，后接正文（如"【课堂内容】本节课学习了..."）
+- "number"：段落以序号开头，后接正文（如"1. 本节课学习了..."）
+- "none"：段落直接写正文，无标题无序号（如"本节课学习了..."）
+
+format 判断规则：分析样本中段落起始方式。若段落以【】或书名号包裹的标题开头，format="title"；若以"1." "2."等序号开头，format="number"；若直接是正文无标题，format="none"。所有段落 format 必须一致。
 
 风格特征评分标准：
 - warmth（温暖度）：1=冷静客观，3=适中，5=非常温暖亲切
@@ -72,7 +79,7 @@ ${JSON_INSTRUCTION}
 - punctuation：如 "规范标点，多用句号" 或 "口语化，多用感叹号"
 - sentencePattern：如 "长短句结合" 或 "多用短句"
 
-styleFeatures 必须填写完整，数值字段必须是 1-5 的整数。`;
+styleFeatures 必须填写完整，数值字段必须是 1-5 的整数。segments 每个必须含 format 字段。`;
   return [{ role: "system", content: system }, { role: "user", content: txt }];
 }
 

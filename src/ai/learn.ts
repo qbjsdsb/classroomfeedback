@@ -2,7 +2,7 @@
 import { callDeepSeek } from "./client";
 import { learnPrompt } from "./prompts";
 import { parseJsonLoose } from "./parse";
-import { Tone, SpecSegment, StyleFeatures } from "../types";
+import { Tone, SpecSegment, StyleFeatures, SegmentFormat } from "../types";
 
 const DEFAULT_SF: StyleFeatures = {
   warmth: 3, formality: 3, conciseness: 3, encouragement: 3,
@@ -13,6 +13,15 @@ function clampInt(v: unknown, fallback: number): number {
   const n = typeof v === "number" ? v : parseInt(String(v), 10);
   if (isNaN(n)) return fallback;
   return Math.max(1, Math.min(5, Math.round(n)));
+}
+
+const VALID_FORMATS: SegmentFormat[] = ["title", "number", "none"];
+
+function parseFormat(v: unknown): SegmentFormat {
+  if (typeof v === "string" && VALID_FORMATS.includes(v as SegmentFormat)) {
+    return v as SegmentFormat;
+  }
+  return "none";
 }
 
 function parseStyleFeatures(sf: any): StyleFeatures {
@@ -41,7 +50,7 @@ export async function learnSpec(args: { apiKey: string; samples: string[] }): Pr
     segments: Array.isArray(p.segments) ? p.segments.map((s: any) => ({
       title: String(s.title ?? ""), targetWords: Number(s.targetWords ?? 0) || 0,
       contentPoints: String(s.contentPoints ?? ""), freeNote: String(s.freeNote ?? ""),
-      format: "none",
+      format: parseFormat(s.format),
     })) : [],
     opening: String(p.opening ?? ""), ending: String(p.ending ?? ""),
     styleFeatures: parseStyleFeatures(p.styleFeatures),

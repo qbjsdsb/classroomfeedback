@@ -54,7 +54,7 @@ export async function relearn(id: number): Promise<void> {
       targetWords: locked.has(`segments[${idx}].targetWords`) ? existing.targetWords : src.targetWords,
       contentPoints: locked.has(`segments[${idx}].contentPoints`) ? existing.contentPoints : src.contentPoints,
       freeNote: locked.has(`segments[${idx}].freeNote`) ? existing.freeNote : src.freeNote,
-      format: locked.has(`segments[${idx}].format`) ? existing.format : ((src as any).format ?? existing.format ?? "none"),
+      format: locked.has(`segments[${idx}].format`) ? existing.format : src.format,
     };
   };
   const segments = learned.segments.map((s, i) => mergeSeg(i, s));

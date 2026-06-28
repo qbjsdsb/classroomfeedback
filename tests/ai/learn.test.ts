@@ -66,4 +66,46 @@ describe("learnSpec styleFeatures 解析", () => {
     expect(result.styleFeatures.warmth).toBe(4);
     expect(result.styleFeatures.formality).toBe(3);
   });
+
+  it("segment format 合法值正确解析", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [
+          { title: "课堂内容", targetWords: 80, contentPoints: "知识点", freeNote: "", format: "title" },
+          { title: "学生表现", targetWords: 100, contentPoints: "表现", freeNote: "", format: "number" },
+        ],
+        opening: "", ending: "",
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.segments.length).toBe(2);
+    expect(result.segments[0].format).toBe("title");
+    expect(result.segments[1].format).toBe("number");
+  });
+
+  it("segment format 缺失时补默认 none", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [
+          { title: "课堂内容", targetWords: 80, contentPoints: "知识点", freeNote: "" },
+        ],
+        opening: "", ending: "",
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.segments[0].format).toBe("none");
+  });
+
+  it("segment format 非法值时补默认 none", async () => {
+    (callDeepSeek as any).mockResolvedValue({
+      content: JSON.stringify({
+        tone: "半书面", styleNote: "", segments: [
+          { title: "课堂内容", targetWords: 80, contentPoints: "知识点", freeNote: "", format: "bold" },
+        ],
+        opening: "", ending: "",
+      }),
+    });
+    const result = await learnSpec({ apiKey: "k", samples: ["样本"] });
+    expect(result.segments[0].format).toBe("none");
+  });
 });
