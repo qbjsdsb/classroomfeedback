@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getApiKey, saveApiKey, setLastBackupAt } from "../hooks/useSettings";
 import { exportAll, importAll } from "../backup/export";
 import { useNotify } from "../hooks/useNotify";
+import { AppearanceSection } from "../components/AppearanceSection";
 
 export default function SettingsPage() {
   const notify = useNotify();
@@ -9,19 +10,22 @@ export default function SettingsPage() {
   useEffect(() => { (async () => setKey(await getApiKey()))(); }, []);
   const save = async () => { await saveApiKey(key); notify.success("已保存"); };
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="page-header">
         <h1 className="text-xl font-bold">设置</h1>
       </div>
-      <div className="form-field">
-        <label className="label">DeepSeek API Key</label>
-        <input type="password" value={key} onChange={e => setKey(e.target.value)}
-          className="input" placeholder="sk-..." />
+      <AppearanceSection />
+      <div className="card space-y-3">
+        <div className="form-field">
+          <label className="label">DeepSeek API Key</label>
+          <input type="password" value={key} onChange={e => setKey(e.target.value)}
+            className="input" placeholder="sk-..." />
+        </div>
+        <button onClick={save} className="btn-primary">保存</button>
+        <p className="hint">Key 仅存在本机浏览器，不会上传。</p>
       </div>
-      <button onClick={save} className="btn-primary">保存</button>
-      <p className="hint">Key 仅存在本机浏览器，不会上传。</p>
-      <div className="border-t border-border pt-3 space-y-2">
-        <h2 className="font-semibold">数据备份</h2>
+      <div className="card space-y-3">
+        <h2 className="section-title">数据备份</h2>
         <p className="text-xs text-orange-600">导出文件含学生信息，请妥善保管。</p>
         <div className="flex gap-2">
           <button onClick={async () => {

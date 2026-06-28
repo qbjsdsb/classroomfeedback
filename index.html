@@ -8,9 +8,21 @@
     <title>课后反馈生成器</title>
     <script>
       (function () {
-        var s = localStorage.getItem("theme");
-        var d = s ? s === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-        if (d) document.documentElement.classList.add("dark");
+        // 迁移旧 theme key 到 cf-mode
+        var old = localStorage.getItem("theme");
+        if (old === "light" || old === "dark") {
+          if (!localStorage.getItem("cf-mode")) {
+            localStorage.setItem("cf-mode", old);
+          }
+          localStorage.removeItem("theme");
+        }
+        // 主题
+        var t = localStorage.getItem("cf-theme") || "warm";
+        document.documentElement.setAttribute("data-theme", t);
+        // 明暗
+        var m = localStorage.getItem("cf-mode") || "system";
+        var dark = m === "dark" || (m !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
       })();
     </script>
   </head>
